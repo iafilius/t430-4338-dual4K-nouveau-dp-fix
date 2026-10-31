@@ -4,11 +4,12 @@ This document tracks every Linux kernel release tested on the **Lenovo ThinkPad 
 
 ---
 
-## 1. Tested Linux Kernel Matrix
+## 1. Tested Linux Kernel & Driver Matrix
 
-| Date / Period | Distribution / Base | Kernel Version | Unpatched Behavior | Patched Behavior (`ior->dp.nr == 0` guard) | Upstream Artifact / Reference |
+| Date / Period | Distribution / Driver | Kernel Version | Unpatched Behavior | Patched Behavior (`ior->dp.nr == 0` guard) | Upstream Artifact / Reference |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **July 2024** | Ubuntu 24.04 LTS | `6.8.0-x-generic` | 💥 Daily divide-by-zero oops in `nv50_disp_super_2_2_dp` when external 4K displays enter power-save standby or switch to HDMI input. | ✅ 100% stable; zero lockups across months of daily multi-input switching. | [FreeDesktop GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377) |
+| **Pre-2024 Era** | Proprietary `nvidia-390` vs. early `nouveau` | `5.x` – `6.5.x` | Early `nouveau` was unusable for docked dual-monitor setups. Proprietary `nvidia-390` worked with occasional stability glitches, but became increasingly difficult to compile as Fermi (`GF108M`) hit EOL on newer kernels. | Migrated to in-tree **`nouveau`** in 2024 once `nouveau` matured to support the full dual-4K docked setup. | — |
+| **July 2024** | Ubuntu 24.04 LTS (`nouveau`) | `6.8.0-x-generic` | 💥 `nouveau` worked great except for a daily divide-by-zero oops in `nv50_disp_super_2_2_dp` when external 4K displays entered standby or switched to HDMI input. | ✅ 100% stable; zero lockups across months of daily multi-input switching. | [FreeDesktop GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377) |
 | **July 2024** | Mainline Stable | `6.9.9` | 💥 Identical `RIP: 0010:nv50_disp_super_2_2_dp+0xa7/0x320 [nouveau]` crash within 24h; system load spikes to `>= 1.0`, reboot hangs. | ✅ 100% stable; clean early-exit when `ior->dp.nr == 0`. | [GitLab MR !25 (`linux-6.9.y`)](https://gitlab.freedesktop.org/drm/nouveau/-/merge_requests/25) |
 | **Aug 2024** | Mainline Stable | `6.10.y` | 💥 Crash still present in upstream `nv50.c`. | ✅ Patched locally and run continuously fornearly two years without a single display-triggered kernel panic. | [GitLab MR !27 (`linux-6.10.y`)](https://gitlab.freedesktop.org/drm/nouveau/-/merge_requests/27) |
 | **July 2026** | Ubuntu 26.04 LTS / Mainline | `7.1.3` (Vanilla) | 💥 Booted clean mainline `7.1.3` without local patch: system froze within 24 hours when external monitors entered standby, requiring hard power reset and `fsck`. | — | Confirmed bug remains unfixed in mainline 7.x series. |

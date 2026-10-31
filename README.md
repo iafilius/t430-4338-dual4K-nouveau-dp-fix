@@ -25,6 +25,15 @@ Out of the box on unpatched mainline kernels, whenever the two external 4K Displ
 
 After first debugging and fixing this bug manually in **July 2024** ([GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377)), and re-encountering the exact same freeze when testing a clean mainline **`7.1.3`** kernel in **July 2026**, I created this repository as a **permanent, self-contained engineering reference**—both to assist upstream Nouveau maintainers and to help fellow ThinkPad / Nouveau multi-monitor users who hit similar DisplayPort link-training crashes.
 
+### Why `nouveau` Instead of the Proprietary NVIDIA Driver? (Driver History)
+
+For many years, this ThinkPad T430 + 4338 Dock setup ran on NVIDIA's proprietary binary driver (the legacy `390.xx` series for Fermi GPUs). When I first tested the open-source **`nouveau`** driver many years ago, it was completely unusable for a docked dual-monitor setup.
+
+Over time, however, staying on the proprietary NVIDIA driver became increasingly painful:
+1. **End-of-Life Kernel Breakage:** NVIDIA ended support for the Fermi (`GF108M` / NVS 5400M) architecture (`390.xx`), making it harder and harder to patch and compile the out-of-tree DKMS module against newer Linux kernels.
+2. **Imperfect Stability:** Even when it compiled, the proprietary driver was never 100% stable on hybrid Optimus laptop/dock setups and suffered from its own intermittent freezes and modesetting glitches.
+3. **The 2024 `nouveau` Breakthrough:** When I re-evaluated the in-tree **`nouveau`** driver in **2024**, the difference was night and day. `nouveau` handled the hybrid Intel HD 4000 (`i915`) + NVIDIA NVS 5400M (`nouveau`) PRIME display offloading and dual 4K@30Hz DisplayPort outputs effortlessly—**except for one showstopper bug**: the `nv50_disp_super_2_2_dp()` division-by-zero crash whenever the external monitors went into standby. With this 4-line kernel patch applied, `nouveau` has proven rock-solid across multiple years of daily production use.
+
 ---
 
 ## 1. Hardware & Shared Dual-4K Workstation Architecture
@@ -40,10 +49,23 @@ After first debugging and fixing this bug manually in **July 2024** ([GitLab Iss
 | **Host Laptop** | Lenovo ThinkPad T430 (Intel Core i7-3xxx) | Host `T430-i7` | Primary Linux workstation (Ubuntu 24.04 → 26.04 LTS) |
 | **Integrated GPU (iGPU)** | Intel HD Graphics 4000 | `i915` (`card1-LVDS-1`) | Drives internal 14" **WQHD (`2560×1440 @ 60Hz`)** LCD at offset `(0, 720)` |
 | **Discrete GPU (dGPU)** | NVIDIA NVS 5400M (GF108M Fermi) | `nouveau` (`0000:01:00.0` / `card2`) | Hardwired to the docking station's digital video outputs (`DP-2` & `DP-3`) |
-| **Docking Station** | Lenovo ThinkPad Mini Dock Plus Series 3 (**Model 4338**) | `card2-DP-2` & `card2-DP-3` | Provides dual full-size DisplayPort outputs directly from the NVS 5400M |
-| **External Monitor #1** | **32" Iiyama ProLite XB3288UHSU** (EDID `PL3288UH`) | `card2-DP-2` (`3840×2160 @ 30Hz`) | Left 4K display at `(2560, 0)`. Connected via **1× DisplayPort cable** from 4338 Dock (`DP-2`) + **1× HDMI cable** from MacBook Pro |
-| **External Monitor #2** | **32" Iiyama ProLite XB3288UHSU** (EDID `PL3288UH`) | `card2-DP-3` (`3840×2160 @ 30Hz`) | Right 4K display at `(6400, 0)`. Connected via **1× DisplayPort cable** from 4338 Dock (`DP-3`) + **1× HDMI cable** from MacBook Pro |
-| **Secondary Laptop** | **Apple MacBook Pro** (Work Laptop) | **1× Native HDMI** + **1× USB-C → HDMI Adapter** | Shares both Iiyama 32" 4K monitors via HDMI inputs (completely independent of the T430; network over Wi-Fi/LAN) |
+| **Docking Station** | Lenovo ThinkPad Mini Dock Plus Series 3 (**Type 4338**) | `card2-DP-2` & `card2-DP-3` | Provides **2× DisplayPort**, **2× DVI-D**, **1× VGA**, 6× USB, GbE ([Lenovo Reference Guide HT508937](https://support.lenovo.com/ca/en/solutions/ht508937-mini-docks-reference-guide)) |
+| **External Monitor #1** | **32" Iiyama ProLite XB3288UHSU** (EDID `PL3288UH`) | `card2-DP-2` (`3840×2160 @ 30Hz`) | Left 4K display at `(2560, 0)`. Connected via **1× DisplayPort cable** from 4338 Dock (`DP-2`) + **1× HDMI cable** from MacBook Pro (left USB-C/HDMI adapter) |
+| **External Monitor #2** | **32" Iiyama ProLite XB3288UHSU** (EDID `PL3288UH`) | `card2-DP-3` (`3840×2160 @ 30Hz`) | Right 4K display at `(6400, 0)`. Connected via **1× DisplayPort cable** from 4338 Dock (`DP-3`) + **1× HDMI cable** from MacBook Pro (right native HDMI) |
+| **Secondary Laptop** | **Apple MacBook Pro** (Work Laptop) | **1× USB-C → HDMI Adapter (Left)** + **1× Native HDMI (Right)** | Shares both Iiyama 32" 4K monitors via their HDMI inputs (no cable between laptops; network via Wi-Fi/LAN) |
+
+### Lenovo ThinkPad Mini Dock Plus Series 3 (Type 4338) Video Port Architecture
+
+Per Lenovo's official [Mini Docks Reference Guide (HT508937)](https://support.lenovo.com/ca/en/solutions/ht508937-mini-docks-reference-guide), the **Type 4338** dock features **five physical video connectors** on its rear backplane, grouped into shared digital output channels wired directly to the ThinkPad T430's discrete **NVIDIA NVS 5400M** GPU:
+
+| Dock Video Channel | Physical Connectors on 4338 Rear | Mutually Exclusive Pairing Rule | Status in This Dual-4K Setup |
+| :--- | :--- | :--- | :--- |
+| **Digital Channel #1** | **DisplayPort 1** (`card2-DP-2`) + **DVI-D 1** (Single-Link) | Shared internal lanes: either **DP 1** *or* **DVI-D 1** can be active (passive DP++ to HDMI/DVI supported). | **Active on `DP-2`** → Left 32" Iiyama XB3288UHSU (`3840×2160 @ 30Hz`) |
+| **Digital Channel #2** | **DisplayPort 2** (`card2-DP-3`) + **DVI-D 2** (Single-Link) | Shared internal lanes: either **DP 2** *or* **DVI-D 2** can be active (passive DP++ to HDMI/DVI supported). | **Active on `DP-3`** → Right 32" Iiyama XB3288UHSU (`3840×2160 @ 30Hz`) |
+| **Analog Channel** | **1× VGA** (DE-15, up to `1920×1200`) | Independent analog DAC output. | Unused |
+| **Laptop Internal Panel** | **Internal 14" LVDS** (`card1-LVDS-1`) | Driven by **Intel HD 4000 (`i915`)** via NVIDIA Optimus / PRIME. | **Active** → Internal WQHD LCD (`2560×1440 @ 60Hz`) |
+
+> **Why NVIDIA Optimus Matters Here:** On the ThinkPad T430, the 4338 Dock's digital outputs (`2× DisplayPort` and `2× DVI-D`) are physically routed to the discrete NVIDIA NVS 5400M rather than the Intel iGPU. You cannot drive the dock's DisplayPort monitors using `i915` alone—`nouveau` (or the legacy NVIDIA driver) must be active to light up external digital displays through the dock.
 
 ---
 

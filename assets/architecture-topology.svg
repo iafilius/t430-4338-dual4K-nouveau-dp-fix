@@ -98,14 +98,15 @@
 
   <!-- ================= MIDDLE LEFT: 4338 DOCK ================= -->
   <g filter="url(#shadow)">
-    <rect x="230" y="432" width="300" height="92" rx="10" fill="#182030" stroke="#ef4444" stroke-width="2"/>
-    <rect x="230" y="432" width="300" height="28" rx="10" fill="url(#dockGrad)"/>
-    <text x="245" y="451" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Lenovo Mini Dock Plus Series 3 (4338)</text>
-    <text x="245" y="478" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#e2e8f0">Dedicated Dual DisplayPort Multiplexer</text>
-    <rect x="245" y="490" width="125" height="24" rx="5" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
-    <text x="257" y="506" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#38bdf8">Rear: card2-DP-2</text>
-    <rect x="385" y="490" width="125" height="24" rx="5" fill="#0f172a" stroke="#76b900" stroke-width="1.5"/>
-    <text x="397" y="506" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">Rear: card2-DP-3</text>
+    <rect x="215" y="424" width="330" height="100" rx="10" fill="#182030" stroke="#ef4444" stroke-width="2"/>
+    <rect x="215" y="424" width="330" height="26" rx="10" fill="url(#dockGrad)"/>
+    <text x="230" y="442" font-family="system-ui, -apple-system, sans-serif" font-size="12.5" font-weight="700" fill="#ffffff">Lenovo Mini Dock Plus Series 3 (Type 4338)</text>
+    <text x="230" y="466" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#e2e8f0">Rear Video: 2× DP++ | 2× DVI-D (shared) | 1× VGA</text>
+    <text x="230" y="482" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#94a3b8">Pair #1: DP-1/DVI-1 • Pair #2: DP-2/DVI-2 • 6× USB • GbE</text>
+    <rect x="235" y="492" width="135" height="24" rx="5" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="245" y="508" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#38bdf8">Rear: card2-DP-2</text>
+    <rect x="385" y="492" width="135" height="24" rx="5" fill="#0f172a" stroke="#76b900" stroke-width="1.5"/>
+    <text x="395" y="508" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">Rear: card2-DP-3</text>
   </g>
 
   <!-- PCIe / Dock Connector Line -->
