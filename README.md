@@ -105,6 +105,35 @@ Once triggered, the `nvkm-disp` kernel worker dies holding display locks:
 - System load average climbs to `>= 1.00` indefinitely.
 - Any attempt to run `sudo reboot` or `sudo poweroff` hangs forever waiting on `nvkm-disp`, forcing a physical power-button reset and `fsck` on boot.
 
+### How We Tracked It Down: `gdb`, `objdump`, and the `kgdboe` Remote Debugging Dead-End
+
+*(Full forensic notes and transcripts in **[`docs/KERNEL_DEBUGGING_JOURNEY.md`](docs/KERNEL_DEBUGGING_JOURNEY.md)**).*
+
+Finding the exact root cause in **July–August 2024** took several iterations of kernel debugging—including a memorable dead end with remote kernel debugging over Ethernet:
+
+1. **Why `gdb vmlinux` Didn't Work at First:**
+   Initially, running `gdb /usr/lib/debug/vmlinux-6.9.9-custom` and `list *(nv50_disp_super_2_2+0x284)` returned `No symbol "nv50_disp_super_2_2" in current context` because `nouveau` is compiled as a loadable kernel module (`CONFIG_DRM_NOUVEAU=m`), not built into `vmlinux`.
+2. **Pinpointing the Exact C Line via `nv50.o` (`gdb` + `objdump -SdCg`):**
+   Pointing `objdump -SdCg nv50.o` and `gdb drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.o` directly at the compiled module object file resolved the instruction pointer (`nv50_disp_super_2_2+0x284`, where the static `nv50_disp_super_2_2_dp` function had been inlined) straight to `nv50.c:1092–1097`:
+   ```text
+   (gdb) list *(nv50_disp_super_2_2+0x284)
+   0x3f84 is in nv50_disp_super_2_2 (drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c:1094).
+   1092        v = v - ((36 / ior->dp.nr) + 3) - 1;
+   ...
+   1097        link_data_rate = (khz * head->asy.or.depth / 8) / ior->dp.nr;
+   ```
+3. **The Remote Kernel Debugging Dead-End (`kgdboe` over UDP):**
+   To inspect live kernel state when the T430 froze, we compiled [`sysprogs/kgdboe`](https://github.com/sysprogs/kgdboe) (Kernel GDB over Ethernet) against `6.10.2-custom` and loaded it via `kallsyms_lookup_name` (`insmod kgdboe.ko ... device_name=eth0`). While `kgdboe` successfully offlined CPUs 1–7 into single-core mode and opened `udp:192.168.1.57:31337`, attaching GDB from a second machine (`target remote udp:192.168.1.57:31337`) immediately failed with:
+   ```text
+   warning: The remote protocol may be unreliable over UDP.
+   Malformed response to offset query, QCfffffffe
+   ```
+   and **hard-locked the target T430 kernel completely** on the very first UDP handshake. Remote kernel debugging over UDP proved to be a complete dead end on modern `6.10.x` kernels.
+4. **Testing Candidate Patches & Refining the Fix:**
+   - We first tested commenting out `drm_dp_dpcd_set_powered(&nv_connector->aux, false)` in `nouveau_dp.c` (suggested during early [GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377) debugging), which did **not** stop `ior->dp.nr` from dropping to `0`.
+   - We then added a caller-side guard in `nv50_disp_super_2_2()` logging `nvkm_error(subdev, "ArFi: ior->dp.nr == 0\n")`, which immediately confirmed `ior->dp.nr == 0` in `dmesg` and eliminated the crash! That prototype was subsequently refined into the clean early-return inside `nv50_disp_super_2_2_dp()` below.
+   - Along the way, while inspecting `/sys/devices/pci0000:00/.../graphics/fb1` when monitors stayed asleep after switching inputs back from the MacBook Pro, running `lshw -c video` unexpectedly woke up the GPU and lit up both 4K screens—inspiring [`scripts/wake-nouveau-dp.sh`](scripts/wake-nouveau-dp.sh).
+
 ---
 
 ## 3. The Kernel Patch (`nv50.c`)
@@ -198,6 +227,7 @@ public-t430-4338-dual4K-nouveau-dp-fix/
 │   ├── check-dp-bypass.sh                     # Checks dmesg/kern.log for prevented crashes & GPU state
 │   └── wake-nouveau-dp.sh                     # Wakes NVS 5400M from PCI runtime suspend after input switch
 └── docs/
+    ├── KERNEL_DEBUGGING_JOURNEY.md            # 2024 GDB, objdump & kgdboe remote debugging forensics
     ├── KERNEL_TEST_MATRIX.md                  # Full 2024–2026 kernel test history & LKML timeline
     └── WAYLAND_DUAL_4K_WATERMARK.md           # Dual 4K@30Hz SST watermark calibration guide
 ```
