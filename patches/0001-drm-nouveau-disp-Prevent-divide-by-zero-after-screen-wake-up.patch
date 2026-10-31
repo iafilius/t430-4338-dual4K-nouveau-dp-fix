@@ -1,0 +1,42 @@
+From: Arjan Filius <iafilius@xs4all.nl>
+Date: Sun, 25 Oct 2026 10:15:08 -0700
+Subject: [PATCH v2] drm/nouveau/disp: Prevent divide by zero after screen wake-up
+
+On a Lenovo T430, dock, using DisplayPort and 2 4K external screens, a divide
+crash happens in nv50_disp_super_2_2_dp() after waking up the screens when the
+monitors were in power save (or switched to another input), because ior->dp.nr
+drops to 0.
+
+This causes:
+- Screen lockup
+- High system load after the issue is triggered
+- Hangs during reboot
+
+Fix this by returning early if the link has 0 active lanes (ior->dp.nr == 0)
+before doing the division calculations.
+
+Closes: https://gitlab.freedesktop.org/drm/nouveau/-/issues/377
+Link: https://lore.kernel.org/lkml/69D67A9F-1A56-4814-AE68-50559DED42AF@xs4all.nl/
+Signed-off-by: Arjan Filius <iafilius@xs4all.nl>
+---
+ drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c b/drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c
+index 51c045bdfcbb..ab1bc0898def 100644
+--- a/drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c
++++ b/drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c
+@@ -1157,6 +1157,10 @@ nv50_disp_super_2_2_dp(struct nvkm_head *head, struct nvkm_ior *ior)
+ {
+ 	struct nvkm_subdev *subdev = &head->disp->engine.subdev;
+ 
++	/* If the DisplayPort link is inactive (0 lanes), skip configuration */
++	if (ior->dp.nr == 0)
++		return;
++
+ 	const u32 khz = head->asy.hz / 1000;
+ 	const u32 linkKBps = ior->dp.bw * 27000;
+ 	const u32 symbol = 100000;
+-- 
+2.45.2
+

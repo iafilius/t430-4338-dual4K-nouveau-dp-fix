@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f17"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="nvGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4d7c0f"/>
+      <stop offset="100%" stop-color="#76b900"/>
+    </linearGradient>
+    <linearGradient id="intelGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0369a1"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="dockGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#b91c1c"/>
+      <stop offset="100%" stop-color="#ef4444"/>
+    </linearGradient>
+    <linearGradient id="dispGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#76b900"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="720" rx="16" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- Subtle Grid -->
+  <g stroke="#1e293b" stroke-width="0.7" opacity="0.5">
+    <line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="360" x2="1200" y2="360"/>
+    <line x1="0" y1="480" x2="1200" y2="480"/>
+    <line x1="0" y1="600" x2="1200" y2="600"/>
+    <line x1="200" y1="0" x2="200" y2="720"/>
+    <line x1="400" y1="0" x2="400" y2="720"/>
+    <line x1="600" y1="0" x2="600" y2="720"/>
+    <line x1="800" y1="0" x2="800" y2="720"/>
+    <line x1="1000" y1="0" x2="1000" y2="720"/>
+  </g>
+
+  <!-- Header Banner -->
+  <rect x="30" y="24" width="1140" height="64" rx="10" fill="#161f30" stroke="#334155" stroke-width="1.5"/>
+  <circle cx="62" cy="56" r="8" fill="#ef4444"/>
+  <text x="84" y="51" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="700" fill="#f8fafc">HYBRID GPU &amp; SHARED DUAL-4K DISPLAY TOPOLOGY</text>
+  <text x="84" y="72" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5" fill="#94a3b8">Lenovo ThinkPad T430 (i915 + Nouveau GF108) • 4338 Mini Dock Plus Series 3 • 2x 32" Iiyama ProLite XB3288UHSU • Total Canvas: 10240 × 2160</text>
+
+  <!-- ================= LEFT: THINKPAD T430 ================= -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="118" width="460" height="270" rx="12" fill="#151d2a" stroke="#475569" stroke-width="2"/>
+    <rect x="40" y="118" width="460" height="38" rx="12" fill="#1e293b"/>
+    <circle cx="64" cy="137" r="6" fill="#e2231a"/>
+    <text x="80" y="142" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#f8fafc">Lenovo ThinkPad T430 (Linux Kernel 7.1.3-custom)</text>
+
+    <!-- Intel HD 4000 Card 1 -->
+    <rect x="60" y="172" width="200" height="115" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+    <rect x="60" y="172" width="200" height="26" rx="8" fill="url(#intelGrad)"/>
+    <text x="72" y="190" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#ffffff">iGPU: Intel HD 4000</text>
+    <text x="72" y="214" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#e2e8f0">Driver: i915 (DRM card1)</text>
+    <text x="72" y="234" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#94a3b8">Output: card1-LVDS-1</text>
+    <text x="72" y="254" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#38bdf8">Internal Panel Controller</text>
+    <text x="72" y="274" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#64748b">Always Active (Primary)</text>
+
+    <!-- NVIDIA NVS 5400M Card 2 -->
+    <rect x="280" y="172" width="200" height="196" rx="8" fill="#0f172a" stroke="#76b900" stroke-width="2"/>
+    <rect x="280" y="172" width="200" height="26" rx="8" fill="url(#nvGrad)"/>
+    <text x="292" y="190" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#ffffff">dGPU: NVIDIA NVS 5400M</text>
+    <text x="292" y="214" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#e2e8f0">Chip: GF108M (PCI 01:00.0)</text>
+    <text x="292" y="233" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#a3e635">Driver: nouveau (card2)</text>
+    <text x="292" y="252" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#94a3b8">Engine: nv50_disp_super</text>
+    <rect x="292" y="264" width="176" height="44" rx="6" fill="#1a2e05" stroke="#4d7c0f" stroke-width="1"/>
+    <text x="300" y="281" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#bef264">nv50_disp_super_2_2_dp()</text>
+    <text x="300" y="298" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#86efac">+ if (ior-&gt;dp.nr == 0) return;</text>
+    <text x="292" y="328" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#cbd5e1">Hardwired to Dock DP Routing</text>
+    <text x="292" y="346" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#94a3b8">Runtime PM: auto / suspended</text>
+
+    <!-- Internal WQHD Panel Box -->
+    <rect x="60" y="305" width="200" height="63" rx="8" fill="#0c192c" stroke="#0284c7" stroke-width="1.5"/>
+    <text x="72" y="325" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#38bdf8">Internal 14" WQHD Mod LCD</text>
+    <text x="72" y="343" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e2e8f0">2560 × 1440 @ 60.00Hz</text>
+    <text x="72" y="359" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#94a3b8">Offset: (0, 720)</text>
+  </g>
+
+  <!-- Arrow iGPU to Internal WQHD -->
+  <line x1="160" y1="287" x2="160" y2="301" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrowBlue)"/>
+
+  <!-- ================= MIDDLE LEFT: 4338 DOCK ================= -->
+  <g filter="url(#shadow)">
+    <rect x="230" y="432" width="300" height="92" rx="10" fill="#182030" stroke="#ef4444" stroke-width="2"/>
+    <rect x="230" y="432" width="300" height="28" rx="10" fill="url(#dockGrad)"/>
+    <text x="245" y="451" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Lenovo Mini Dock Plus Series 3 (4338)</text>
+    <text x="245" y="478" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#e2e8f0">Dedicated Dual DisplayPort Multiplexer</text>
+    <rect x="245" y="490" width="125" height="24" rx="5" fill="#0f172a" stroke="#76b900" stroke-width="1.2"/>
+    <text x="257" y="506" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">Port: card2-DP-2</text>
+    <rect x="385" y="490" width="125" height="24" rx="5" fill="#0f172a" stroke="#76b900" stroke-width="1.2"/>
+    <text x="397" y="506" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">Port: card2-DP-3</text>
+  </g>
+
+  <!-- PCIe / Dock Connector Line -->
+  <path d="M 380 368 L 380 426" stroke="#76b900" stroke-width="3" stroke-dasharray="5,3" marker-end="url(#arrowGreen)"/>
+  <text x="390" y="405" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#a3e635">Proprietary Dock Connector (SOR / DP PHY)</text>
+
+  <!-- ================= RIGHT TOP: SECONDARY WORK LAPTOP ================= -->
+  <g filter="url(#shadow)">
+    <rect x="720" y="118" width="440" height="175" rx="12" fill="#151d2a" stroke="#f59e0b" stroke-width="2"/>
+    <rect x="720" y="118" width="440" height="38" rx="12" fill="#27201c"/>
+    <circle cx="744" cy="137" r="6" fill="#f59e0b"/>
+    <text x="760" y="142" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#fef3c7">Secondary Laptop (Work Workstation)</text>
+    <text x="740" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#e2e8f0">Shares the same two 32" 4K monitors via HDMI inputs during work hours.</text>
+    <rect x="740" y="196" width="400" height="52" rx="8" fill="#291d12" stroke="#d97706" stroke-width="1.2"/>
+    <text x="754" y="216" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="700" fill="#fbbf24">⚡ THE "END-OF-WORKDAY" TRIGGER:</text>
+    <text x="754" y="235" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fde68a">When this laptop sleeps/shuts down → both 4K monitors enter standby</text>
+    <text x="740" y="274" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#fbbf24">Outputs: HDMI Out #1  &amp;  HDMI Out #2 (USB-C / Dock)</text>
+  </g>
+
+  <!-- ================= BOTTOM: DUAL 32" IIYAMA 4K MONITORS ================= -->
+  <!-- Monitor 1 -->
+  <g filter="url(#shadow)">
+    <rect x="440" y="555" width="345" height="138" rx="12" fill="url(#dispGrad)" stroke="#76b900" stroke-width="2"/>
+    <rect x="440" y="555" width="345" height="30" rx="12" fill="#1e293b"/>
+    <text x="456" y="575" font-family="system-ui, -apple-system, sans-serif" font-size="13.5" font-weight="700" fill="#f8fafc">Monitor #1: Iiyama ProLite XB3288UHSU (32" 4K)</text>
+    <text x="456" y="603" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#e2e8f0">EDID ID: PL3288UH • 3840 × 2160 @ 30.00Hz</text>
+    <text x="456" y="622" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#94a3b8">Wayland Canvas Pos: (2560, 0)</text>
+    <!-- Input Badges -->
+    <rect x="456" y="636" width="148" height="42" rx="6" fill="#132a13" stroke="#76b900" stroke-width="1.2"/>
+    <text x="466" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#a3e635">1x DisplayPort Input</text>
+    <text x="466" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#bbf7d0">← Dock DP-2 (T430)</text>
+
+    <rect x="618" y="636" width="150" height="42" rx="6" fill="#291d12" stroke="#f59e0b" stroke-width="1.2"/>
+    <text x="628" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#fbbf24">2x HDMI Inputs</text>
+    <text x="628" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#fde68a">← Work Laptop HDMI #1</text>
+  </g>
+
+  <!-- Monitor 2 -->
+  <g filter="url(#shadow)">
+    <rect x="815" y="555" width="345" height="138" rx="12" fill="url(#dispGrad)" stroke="#76b900" stroke-width="2"/>
+    <rect x="815" y="555" width="345" height="30" rx="12" fill="#1e293b"/>
+    <text x="831" y="575" font-family="system-ui, -apple-system, sans-serif" font-size="13.5" font-weight="700" fill="#f8fafc">Monitor #2: Iiyama ProLite XB3288UHSU (32" 4K)</text>
+    <text x="831" y="603" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#e2e8f0">EDID ID: PL3288UH • 3840 × 2160 @ 30.00Hz</text>
+    <text x="831" y="622" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#94a3b8">Wayland Canvas Pos: (6400, 0)</text>
+    <!-- Input Badges -->
+    <rect x="831" y="636" width="148" height="42" rx="6" fill="#132a13" stroke="#76b900" stroke-width="1.2"/>
+    <text x="841" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#a3e635">1x DisplayPort Input</text>
+    <text x="841" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#bbf7d0">← Dock DP-3 (T430)</text>
+
+    <rect x="993" y="636" width="150" height="42" rx="6" fill="#291d12" stroke="#f59e0b" stroke-width="1.2"/>
+    <text x="1003" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#fbbf24">2x HDMI Inputs</text>
+    <text x="1003" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#fde68a">← Work Laptop HDMI #2</text>
+  </g>
+
+  <!-- Routing Cables: Dock DP-2 and DP-3 to Monitors -->
+  <path d="M 307 514 L 307 657 L 450 657" fill="none" stroke="#76b900" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <text x="316" y="648" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">DP-2 Cable</text>
+
+  <path d="M 447 514 L 447 538 L 905 538 L 905 550" fill="none" stroke="#76b900" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <text x="580" y="532" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">DP-3 Cable (SST 4K@30Hz • Watermark Calibrated)</text>
+
+  <!-- Routing Cables: Work Laptop HDMI to Monitors -->
+  <path d="M 820 293 L 820 420 L 693 420 L 693 550" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrowAmber)"/>
+  <text x="702" y="412" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#fbbf24">HDMI #1 (Input Switch)</text>
+
+  <path d="M 1068 293 L 1068 550" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrowAmber)"/>
+  <text x="1076" y="420" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#fbbf24">HDMI #2</text>
+
+  <!-- Summary Legend Box Bottom Left -->
+  <rect x="40" y="555" width="245" height="138" rx="10" fill="#131b29" stroke="#334155" stroke-width="1.5"/>
+  <text x="56" y="578" font-family="system-ui, -apple-system, sans-serif" font-size="12.5" font-weight="700" fill="#f8fafc">Desktop Geometry Summary</text>
+  <text x="56" y="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#38bdf8">• LVDS-1: 2560×1440 @ (0, 720)</text>
+  <text x="56" y="618" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#a3e635">• DP-2:   3840×2160 @ (2560, 0)</text>
+  <text x="56" y="636" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#a3e635">• DP-3:   3840×2160 @ (6400, 0)</text>
+  <line x1="56" y1="648" x2="268" y2="648" stroke="#334155" stroke-width="1"/>
+  <text x="56" y="666" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#f8fafc">Total Span: 10240 × 2160 px</text>
+  <text x="56" y="682" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#94a3b8">Compositor: GNOME / Mutter Wayland</text>
+</svg>
+

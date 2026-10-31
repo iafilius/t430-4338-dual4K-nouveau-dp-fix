@@ -1,0 +1,35 @@
+From: Arjan Filius <iafilius@xs4all.nl>
+Date: Thu, 16 Jul 2026 16:55:00 +0200
+Subject: [PATCH] drm/nouveau/disp: Prevent divide by zero and log warning when DP lanes == 0
+
+Diagnostic variant of the DisplayPort zero-lane guard in nv50_disp_super_2_2_dp().
+Emits a kernel warning via nvkm_warn() whenever an inactive DisplayPort link
+(ior->dp.nr == 0) is encountered during sleep/wake or multi-input monitor
+transitions, making it trivial to verify prevented crashes in dmesg/syslog.
+
+Closes: https://gitlab.freedesktop.org/drm/nouveau/-/issues/377
+Signed-off-by: Arjan Filius <iafilius@xs4all.nl>
+---
+ drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c b/drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c
+index 51c045bdfcbb..38a917ef021c 100644
+--- a/drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c
++++ b/drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c
+@@ -1157,6 +1157,12 @@ nv50_disp_super_2_2_dp(struct nvkm_head *head, struct nvkm_ior *ior)
+ {
+ 	struct nvkm_subdev *subdev = &head->disp->engine.subdev;
+ 
++	/* If the DisplayPort link is inactive (0 lanes), skip configuration */
++	if (ior->dp.nr == 0) {
++		nvkm_warn(subdev, "DP link is inactive (lanes = 0), skipping display configuration.\n");
++		return;
++	}
++
+ 	const u32 khz = head->asy.hz / 1000;
+ 	const u32 linkKBps = ior->dp.bw * 27000;
+ 	const u32 symbol = 100000;
+-- 
+2.45.2
+

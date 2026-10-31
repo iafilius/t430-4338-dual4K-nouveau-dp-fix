@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f17"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="crashGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#991b1b"/>
+      <stop offset="100%" stop-color="#ef4444"/>
+    </linearGradient>
+    <linearGradient id="safeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#15803d"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+    <filter id="drop" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <marker id="arrGray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrRed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444"/>
+    </marker>
+    <marker id="arrGreen2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#22c55e"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="760" rx="16" fill="url(#bgGrad2)" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- Header -->
+  <rect x="30" y="24" width="1140" height="64" rx="10" fill="#161f30" stroke="#334155" stroke-width="1.5"/>
+  <circle cx="62" cy="56" r="8" fill="#f59e0b"/>
+  <text x="84" y="51" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="700" fill="#f8fafc">THE "END-OF-WORKDAY" CRASH STATE MACHINE: UNPATCHED vs. PATCHED</text>
+  <text x="84" y="72" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5" fill="#94a3b8">Target: drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c → nv50_disp_super_2_2_dp(struct nvkm_head *head, struct nvkm_ior *ior)</text>
+
+  <!-- STEP 1 to STEP 4 TOP PIPELINE -->
+  <g filter="url(#drop)">
+    <!-- Step 1 -->
+    <rect x="40" y="114" width="245" height="96" rx="10" fill="#151f32" stroke="#475569" stroke-width="1.5"/>
+    <text x="56" y="138" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">1. Shared Monitor Session</text>
+    <text x="56" y="158" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e2e8f0">2x Iiyama XB3288UHSU switched</text>
+    <text x="56" y="175" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e2e8f0">to Work Laptop (HDMI input).</text>
+    <text x="56" y="194" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#94a3b8">T430 docked on DP-2 &amp; DP-3</text>
+
+    <!-- Step 2 -->
+    <rect x="325" y="114" width="245" height="96" rx="10" fill="#151f32" stroke="#475569" stroke-width="1.5"/>
+    <text x="341" y="138" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#fbbf24">2. End of Workday Standby</text>
+    <text x="341" y="158" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e2e8f0">Work laptop sleeps/shuts down.</text>
+    <text x="341" y="175" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e2e8f0">Monitors lose active signal and</text>
+    <text x="341" y="194" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#fde68a">enter DPMS Power-Save Standby.</text>
+
+    <!-- Step 3 -->
+    <rect x="610" y="114" width="255" height="96" rx="10" fill="#151f32" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="626" y="138" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#f59e0b">3. DP Link Drops to 0 Lanes</text>
+    <text x="626" y="158" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e2e8f0">DDC responds with no EDID.</text>
+    <text x="626" y="175" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e2e8f0">Link training lane count reads:</text>
+    <text x="626" y="195" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" font-weight="700" fill="#fbbf24">ior-&gt;dp.nr = 0</text>
+
+    <!-- Step 4 -->
+    <rect x="905" y="114" width="255" height="96" rx="10" fill="#151f32" stroke="#e11d48" stroke-width="1.5"/>
+    <text x="921" y="138" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#fb7185">4. Modeset Supervisor IRQ</text>
+    <text x="921" y="158" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e2e8f0">Workqueue: nvkm-disp</text>
+    <text x="921" y="175" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e2e8f0">nv50_disp_super_2_2() invokes:</text>
+    <text x="921" y="195" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="700" fill="#fda4af">nv50_disp_super_2_2_dp()</text>
+  </g>
+
+  <!-- Arrows 1->2->3->4 -->
+  <line x1="285" y1="162" x2="319" y2="162" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#arrGray)"/>
+  <line x1="570" y1="162" x2="604" y2="162" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#arrGray)"/>
+  <line x1="865" y1="162" x2="899" y2="162" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#arrGray)"/>
+
+  <!-- Branch Split from Step 4 -->
+  <path d="M 1032 210 L 1032 242 L 305 242 L 305 270" fill="none" stroke="#ef4444" stroke-width="2.5" marker-end="url(#arrRed)"/>
+  <path d="M 1032 210 L 1032 242 L 895 242 L 895 270" fill="none" stroke="#22c55e" stroke-width="2.5" marker-end="url(#arrGreen2)"/>
+
+  <!-- ================= LEFT COLUMN: UNPATCHED MAINLINE KERNEL ================= -->
+  <g filter="url(#drop)">
+    <rect x="40" y="276" width="535" height="450" rx="12" fill="#1a1116" stroke="#ef4444" stroke-width="2"/>
+    <rect x="40" y="276" width="535" height="38" rx="12" fill="url(#crashGrad)"/>
+    <text x="60" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="14.5" font-weight="700" fill="#ffffff">❌ UNPATCHED MAINLINE KERNEL (6.8.x / 6.9.9 / 6.10.y / 7.1.3)</text>
+
+    <!-- Code Box Divide by Zero -->
+    <rect x="62" y="332" width="490" height="122" rx="8" fill="#0f0a0d" stroke="#7f1d1d" stroke-width="1.5"/>
+    <text x="76" y="353" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="700" fill="#fca5a5">// nv50.c lines 1179–1190: No guard for ior-&gt;dp.nr == 0!</text>
+    <text x="76" y="376" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#f8fafc">h = h - (3 * ior-&gt;dp.ef) - (12 / <tspan fill="#ef4444" font-weight="700">ior-&gt;dp.nr</tspan>);         <tspan fill="#ef4444">// 12 / 0 💥</tspan></text>
+    <text x="76" y="399" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#f8fafc">v = v - ((36 / <tspan fill="#ef4444" font-weight="700">ior-&gt;dp.nr</tspan>) + 3) - 1;                <tspan fill="#ef4444">// 36 / 0 💥</tspan></text>
+    <text x="76" y="422" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#f8fafc">link_data_rate = (khz * depth / 8) / <tspan fill="#ef4444" font-weight="700">ior-&gt;dp.nr</tspan>; <tspan fill="#ef4444">// .. / 0 💥</tspan></text>
+    <text x="76" y="443" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#f87171">RIP: 0010:nv50_disp_super_2_2_dp+0xa7/0x320 [nouveau]</text>
+
+    <line x1="307" y1="454" x2="307" y2="480" stroke="#ef4444" stroke-width="2" marker-end="url(#arrRed)"/>
+
+    <!-- Oops Consequence Box 1 -->
+    <rect x="62" y="486" width="490" height="92" rx="8" fill="#261219" stroke="#b91c1c" stroke-width="1.2"/>
+    <text x="78" y="508" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#fca5a5">Kernel Math Exception (Divide Error: 0000 [#1] PREEMPT SMP)</text>
+    <text x="78" y="529" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fecdd3">• Display workqueue `nvkm-disp` locks up holding mutexes</text>
+    <text x="78" y="547" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fecdd3">• `nouveau 0000:01:00.0: DRM: core notifier timeout`</text>
+    <text x="78" y="565" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fecdd3">• System load spikes to ≥ 1.00; displays freeze permanently</text>
+
+    <line x1="307" y1="578" x2="307" y2="604" stroke="#ef4444" stroke-width="2" marker-end="url(#arrRed)"/>
+
+    <!-- Oops Consequence Box 2 -->
+    <rect x="62" y="610" width="490" height="94" rx="8" fill="#3b0d15" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="78" y="632" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#ffffff">💀 Total System Lockup &amp; Collateral Damage</text>
+    <text x="78" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fecdd3">1. Graceful reboot/shutdown hangs waiting on `nvkm-disp`</text>
+    <text x="78" y="671" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fecdd3">2. Hard power-button reset required → unclean filesystem (`fsck`)</text>
+    <text x="78" y="689" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fecdd3">3. `efi-pstore` dumps crash log into 64KB UEFI NVRAM → BIOS F1 Halt!</text>
+  </g>
+
+  <!-- ================= RIGHT COLUMN: PATCHED KERNEL ================= -->
+  <g filter="url(#drop)">
+    <rect x="625" y="276" width="535" height="450" rx="12" fill="#0d1f17" stroke="#22c55e" stroke-width="2"/>
+    <rect x="625" y="276" width="535" height="38" rx="12" fill="url(#safeGrad)"/>
+    <text x="645" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="14.5" font-weight="700" fill="#ffffff">✅ PATCHED KERNEL ([PATCH v2] Early-Exit Guard)</text>
+
+    <!-- Code Box Guard -->
+    <rect x="647" y="332" width="490" height="122" rx="8" fill="#07120d" stroke="#15803d" stroke-width="1.5"/>
+    <text x="661" y="353" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="700" fill="#86efac">// nv50.c line 1160: Early-exit guard before any division</text>
+    <text x="661" y="376" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#94a3b8">/* If the DisplayPort link is inactive (0 lanes), skip */</text>
+    <text x="661" y="398" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" font-weight="700" fill="#4ade80">if (ior-&gt;dp.nr == 0)</text>
+    <text x="661" y="420" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" font-weight="700" fill="#4ade80">        return;</text>
+    <text x="661" y="443" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#a7f3d0">Optional Diagnostic Mode: logs `nvkm_warn()` to dmesg</text>
+
+    <line x1="892" y1="454" x2="892" y2="480" stroke="#22c55e" stroke-width="2" marker-end="url(#arrGreen2)"/>
+
+    <!-- Safe Box 1 -->
+    <rect x="647" y="486" width="490" height="92" rx="8" fill="#0f291e" stroke="#16a34a" stroke-width="1.2"/>
+    <text x="663" y="508" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#86efac">Clean Display Supervisor Bypass</text>
+    <text x="663" y="529" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#d1fae5">• Skips symbol/blanking math on inactive `DP-2` and `DP-3`</text>
+    <text x="663" y="547" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#d1fae5">• `nvkm-disp` workqueue completes immediately without blocking</text>
+    <text x="663" y="565" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#d1fae5">• dmesg: `DP link is inactive (lanes = 0), skipping...`</text>
+
+    <line x1="892" y1="578" x2="892" y2="604" stroke="#22c55e" stroke-width="2" marker-end="url(#arrGreen2)"/>
+
+    <!-- Safe Box 2 -->
+    <rect x="647" y="610" width="490" height="94" rx="8" fill="#133826" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="663" y="632" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#ffffff">🛡️ Graceful GPU Runtime Suspend &amp; Multi-Year Uptime</text>
+    <text x="663" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#d1fae5">1. NVIDIA NVS 5400M transitions to PCI `runtime_status: suspended`</text>
+    <text x="663" y="671" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#d1fae5">2. T430 stays 100% responsive across daily sleep/wake cycles</text>
+    <text x="663" y="689" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#d1fae5">3. Displays wake cleanly when switched back (or via `wake-nouveau-dp.sh`)</text>
+  </g>
+</svg>
+
