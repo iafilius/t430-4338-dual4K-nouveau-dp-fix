@@ -102,77 +102,77 @@
     <rect x="230" y="432" width="300" height="28" rx="10" fill="url(#dockGrad)"/>
     <text x="245" y="451" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Lenovo Mini Dock Plus Series 3 (4338)</text>
     <text x="245" y="478" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#e2e8f0">Dedicated Dual DisplayPort Multiplexer</text>
-    <rect x="245" y="490" width="125" height="24" rx="5" fill="#0f172a" stroke="#76b900" stroke-width="1.2"/>
-    <text x="257" y="506" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">Port: card2-DP-2</text>
-    <rect x="385" y="490" width="125" height="24" rx="5" fill="#0f172a" stroke="#76b900" stroke-width="1.2"/>
-    <text x="397" y="506" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">Port: card2-DP-3</text>
+    <rect x="245" y="490" width="125" height="24" rx="5" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="257" y="506" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#38bdf8">Rear: card2-DP-2</text>
+    <rect x="385" y="490" width="125" height="24" rx="5" fill="#0f172a" stroke="#76b900" stroke-width="1.5"/>
+    <text x="397" y="506" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">Rear: card2-DP-3</text>
   </g>
 
   <!-- PCIe / Dock Connector Line -->
   <path d="M 380 368 L 380 426" stroke="#76b900" stroke-width="3" stroke-dasharray="5,3" marker-end="url(#arrowGreen)"/>
-  <text x="390" y="405" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#a3e635">Proprietary Dock Connector (SOR / DP PHY)</text>
+  <text x="390" y="405" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#a3e635">Bottom Dock Connector (No cables on T430 body)</text>
 
   <!-- ================= RIGHT TOP: SECONDARY WORK LAPTOP (MACBOOK PRO) ================= -->
   <g filter="url(#shadow)">
-    <rect x="720" y="118" width="440" height="175" rx="12" fill="#151d2a" stroke="#f59e0b" stroke-width="2"/>
-    <rect x="720" y="118" width="440" height="38" rx="12" fill="#27201c"/>
-    <circle cx="744" cy="137" r="6" fill="#f59e0b"/>
-    <text x="760" y="142" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#fef3c7">Secondary Laptop: MacBook Pro (Work)</text>
-    <text x="740" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#e2e8f0">Shares both 32" 4K monitors via HDMI inputs (No direct cable to T430).</text>
+    <rect x="720" y="118" width="440" height="175" rx="12" fill="#151d2a" stroke="#94a3b8" stroke-width="2"/>
+    <rect x="720" y="118" width="440" height="38" rx="12" fill="#1e293b"/>
+    <circle cx="744" cy="137" r="6" fill="#38bdf8"/>
+    <text x="760" y="142" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#f8fafc">Secondary Laptop: MacBook Pro (Work)</text>
+    <text x="740" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#e2e8f0">Shares both 32" 4K monitors via HDMI (Connected via Wi-Fi / LAN only).</text>
     <rect x="740" y="196" width="400" height="52" rx="8" fill="#291d12" stroke="#d97706" stroke-width="1.2"/>
     <text x="754" y="216" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="700" fill="#fbbf24">⚡ THE "END-OF-WORKDAY" TRIGGER:</text>
     <text x="754" y="235" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fde68a">When MacBook Pro sleeps/closes → both 4K monitors enter standby</text>
-    <text x="740" y="274" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#fbbf24">Outputs: 1× Native HDMI Port  &amp;  1× USB-C to HDMI Adapter</text>
+    <text x="740" y="274" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#e2e8f0"><tspan fill="#38bdf8" font-weight="700">Left Side:</tspan> USB-C→HDMI Adapter   |   <tspan fill="#a3e635" font-weight="700">Right Side:</tspan> Native HDMI Port</text>
   </g>
 
   <!-- ================= BOTTOM: DUAL 32" IIYAMA 4K MONITORS ================= -->
-  <!-- Monitor 1 -->
+  <!-- Monitor 1 (LEFT - CYAN CODED) -->
   <g filter="url(#shadow)">
-    <rect x="440" y="555" width="345" height="138" rx="12" fill="url(#dispGrad)" stroke="#76b900" stroke-width="2"/>
-    <rect x="440" y="555" width="345" height="30" rx="12" fill="#1e293b"/>
-    <text x="456" y="575" font-family="system-ui, -apple-system, sans-serif" font-size="13.5" font-weight="700" fill="#f8fafc">Monitor #1: Iiyama ProLite XB3288UHSU (32" 4K)</text>
+    <rect x="440" y="555" width="345" height="138" rx="12" fill="url(#dispGrad)" stroke="#38bdf8" stroke-width="2.5"/>
+    <rect x="440" y="555" width="345" height="30" rx="12" fill="#0c2538"/>
+    <text x="456" y="575" font-family="system-ui, -apple-system, sans-serif" font-size="13.5" font-weight="700" fill="#38bdf8">Left Monitor #1: Iiyama XB3288UHSU (32" 4K)</text>
     <text x="456" y="603" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#e2e8f0">EDID ID: PL3288UH • 3840 × 2160 @ 30.00Hz</text>
-    <text x="456" y="622" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#94a3b8">Wayland Canvas Pos: (2560, 0)</text>
+    <text x="456" y="622" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#94a3b8">Wayland Canvas Pos: (2560, 0) • Cyan Cables</text>
     <!-- Input Badges -->
-    <rect x="456" y="636" width="148" height="42" rx="6" fill="#132a13" stroke="#76b900" stroke-width="1.2"/>
-    <text x="466" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#a3e635">1x DisplayPort Input</text>
-    <text x="466" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#bbf7d0">← 1× Cable (Dock DP-2)</text>
+    <rect x="456" y="636" width="148" height="42" rx="6" fill="#082f49" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="466" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#38bdf8">DisplayPort Input</text>
+    <text x="466" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#bae6fd">← 4338 Dock Rear DP-2</text>
 
-    <rect x="618" y="636" width="150" height="42" rx="6" fill="#291d12" stroke="#f59e0b" stroke-width="1.2"/>
-    <text x="628" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#fbbf24">2x HDMI Inputs</text>
-    <text x="628" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#fde68a">← MBP Native HDMI</text>
+    <rect x="618" y="636" width="150" height="42" rx="6" fill="#082f49" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="628" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#38bdf8">HDMI Input</text>
+    <text x="628" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#bae6fd">← MBP Left (USB-C/HDMI)</text>
   </g>
 
-  <!-- Monitor 2 -->
+  <!-- Monitor 2 (RIGHT - GREEN CODED) -->
   <g filter="url(#shadow)">
-    <rect x="815" y="555" width="345" height="138" rx="12" fill="url(#dispGrad)" stroke="#76b900" stroke-width="2"/>
-    <rect x="815" y="555" width="345" height="30" rx="12" fill="#1e293b"/>
-    <text x="831" y="575" font-family="system-ui, -apple-system, sans-serif" font-size="13.5" font-weight="700" fill="#f8fafc">Monitor #2: Iiyama ProLite XB3288UHSU (32" 4K)</text>
+    <rect x="815" y="555" width="345" height="138" rx="12" fill="url(#dispGrad)" stroke="#76b900" stroke-width="2.5"/>
+    <rect x="815" y="555" width="345" height="30" rx="12" fill="#182b09"/>
+    <text x="831" y="575" font-family="system-ui, -apple-system, sans-serif" font-size="13.5" font-weight="700" fill="#a3e635">Right Monitor #2: Iiyama XB3288UHSU (32" 4K)</text>
     <text x="831" y="603" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#e2e8f0">EDID ID: PL3288UH • 3840 × 2160 @ 30.00Hz</text>
-    <text x="831" y="622" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#94a3b8">Wayland Canvas Pos: (6400, 0)</text>
+    <text x="831" y="622" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#94a3b8">Wayland Canvas Pos: (6400, 0) • Green Cables</text>
     <!-- Input Badges -->
-    <rect x="831" y="636" width="148" height="42" rx="6" fill="#132a13" stroke="#76b900" stroke-width="1.2"/>
-    <text x="841" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#a3e635">1x DisplayPort Input</text>
-    <text x="841" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#bbf7d0">← 1× Cable (Dock DP-3)</text>
+    <rect x="831" y="636" width="148" height="42" rx="6" fill="#132a13" stroke="#76b900" stroke-width="1.5"/>
+    <text x="841" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#a3e635">DisplayPort Input</text>
+    <text x="841" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#bbf7d0">← 4338 Dock Rear DP-3</text>
 
-    <rect x="993" y="636" width="150" height="42" rx="6" fill="#291d12" stroke="#f59e0b" stroke-width="1.2"/>
-    <text x="1003" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#fbbf24">2x HDMI Inputs</text>
-    <text x="1003" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#fde68a">← MBP USB-C → HDMI</text>
+    <rect x="993" y="636" width="150" height="42" rx="6" fill="#132a13" stroke="#76b900" stroke-width="1.5"/>
+    <text x="1003" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#a3e635">HDMI Input</text>
+    <text x="1003" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#bbf7d0">← MBP Right (Native HDMI)</text>
   </g>
 
-  <!-- Routing Cables: Dock DP-2 and DP-3 to Monitors -->
-  <path d="M 307 514 L 307 657 L 450 657" fill="none" stroke="#76b900" stroke-width="3" marker-end="url(#arrowGreen)"/>
-  <text x="316" y="648" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">1× DP Cable (DP-2)</text>
+  <!-- Routing Cables to LEFT Monitor #1 (CYAN #38bdf8) -->
+  <path d="M 307 514 L 307 657 L 450 657" fill="none" stroke="#38bdf8" stroke-width="3" marker-end="url(#arrowBlue)"/>
+  <text x="314" y="648" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#38bdf8">Dock Rear DP-2 (Cyan)</text>
 
+  <path d="M 790 293 L 790 420 L 693 420 L 693 550" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrowBlue)"/>
+  <text x="640" y="410" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#38bdf8">MBP Left: USB-C→HDMI (Cyan)</text>
+
+  <!-- Routing Cables to RIGHT Monitor #2 (GREEN #76b900) -->
   <path d="M 447 514 L 447 538 L 905 538 L 905 550" fill="none" stroke="#76b900" stroke-width="3" marker-end="url(#arrowGreen)"/>
-  <text x="580" y="532" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">1× DP Cable (DP-3 • SST 4K@30Hz)</text>
+  <text x="530" y="531" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">Dock Rear DP-3 (Green)</text>
 
-  <!-- Routing Cables: Work Laptop HDMI to Monitors -->
-  <path d="M 820 293 L 820 420 L 693 420 L 693 550" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrowAmber)"/>
-  <text x="698" y="412" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#fbbf24">1× Native HDMI Cable</text>
-
-  <path d="M 1068 293 L 1068 550" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrowAmber)"/>
-  <text x="935" y="420" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#fbbf24">1× USB-C → HDMI Cable</text>
+  <path d="M 1068 293 L 1068 550" fill="none" stroke="#76b900" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrowGreen)"/>
+  <text x="900" y="460" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">MBP Right: Native HDMI (Green)</text>
 
   <!-- Summary Legend Box Bottom Left -->
   <rect x="40" y="555" width="245" height="138" rx="10" fill="#131b29" stroke="#334155" stroke-width="1.5"/>
