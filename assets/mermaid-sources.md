@@ -68,25 +68,3 @@ sequenceDiagram
     end
 ```
 
----
-
-## 3. ThinkPad T430 64KB UEFI NVRAM Exhaustion & Recovery Flow
-
-```mermaid
-flowchart LR
-    subgraph PROBLEM["❌ Why BIOS Halts with 'Non-volatile memory is full'"]
-        A["64 KB Total NVRAM<br/>(65,516 Bytes)"] --> B["Lenovo System Vars<br/>~34.4 KB (52.5%)"]
-        A --> C["Factory Secure Boot Keys<br/>(dbx + db + KEK + PK)<br/>26.7 KB (40.8%)"]
-        A --> D["Remaining Free Space<br/>Only 4.3 KB (6.7%)"]
-        E["Ubuntu sbkeysync<br/>(secureboot-db.service)"] -.->|"Re-writes 17.9KB dbx on boot"| C
-        F["Nouveau Kernel Panics<br/>(efi-pstore dumps)"] -.->|"Fills remaining 4.3KB"| D
-        D ==> G["💥 Fails 10 KB POST Margin<br/>BIOS F1 Halt on Reboot"]
-    end
-
-    subgraph SOLUTION["✅ Three-Step Permanent Fix (>31 KB Free)"]
-        S1["1. BIOS Secure Boot:<br/>'Reset to Setup Mode'<br/>(Wipes 26.7 KB keys)"] --> S2["2. Purge Ubuntu Sync:<br/>apt purge secureboot-db<br/>+ disable fwupd uefi_dbx"]
-        S2 --> S3["3. Disable Crash Dumps:<br/>GRUB efi_pstore.pstore_disable=1"]
-        S3 ==> OK["🛡️ 31.1 KB Free (47.5%)<br/>Zero BIOS F1 Prompts"]
-    end
-```
-

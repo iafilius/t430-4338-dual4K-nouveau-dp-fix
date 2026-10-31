@@ -21,7 +21,7 @@ Can a classic **Lenovo ThinkPad T430** running modern mainline Linux kernels (`6
 
 **Yes—with a 4-line kernel patch.**
 
-Out of the box on unpatched mainline kernels, whenever the two external 4K DisplayPort monitors enter power-saving standby or switch their active input to a secondary work laptop, the DisplayPort link lane count drops to zero (`ior->dp.nr == 0`). When a subsequent modeset interrupt invokes `nv50_disp_super_2_2_dp()`, the Nouveau driver divides by `ior->dp.nr` (`0`), triggering a fatal **kernel division-by-zero oops** in the `nvkm-disp` workqueue. This locks up the graphics pipeline, spikes system load, hangs reboot attempts, and forces a hard power reset (followed by `fsck` and UEFI NVRAM `efi-pstore` exhaustion).
+Out of the box on unpatched mainline kernels, whenever the two external 4K DisplayPort monitors enter power-saving standby or switch their active input to a secondary work laptop, the DisplayPort link lane count drops to zero (`ior->dp.nr == 0`). When a subsequent modeset interrupt invokes `nv50_disp_super_2_2_dp()`, the Nouveau driver divides by `ior->dp.nr` (`0`), triggering a fatal **kernel division-by-zero oops** in the `nvkm-disp` workqueue. This locks up the graphics pipeline, spikes system load, hangs reboot attempts, and forces a hard power reset (followed by `fsck` on boot).
 
 After first debugging and fixing this bug manually in **July 2024** ([GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377)), and re-encountering the exact same freeze when testing a clean mainline **`7.1.3`** kernel in **July 2026**, I created this repository as a **permanent, self-contained engineering reference**—both to assist upstream Nouveau maintainers and to help fellow ThinkPad / Nouveau multi-monitor users who hit similar DisplayPort link-training crashes.
 
@@ -144,10 +144,10 @@ git am ./*.mbx
 
 ## 5. Companion Engineering Deep-Dives & Operational Scripts
 
-Running a hybrid GPU ThinkPad T430 with dual 4K external monitors surfaced three additional hardware/driver nuances that are fully solved and documented in this repository:
+Running a hybrid GPU ThinkPad T430 with dual 4K external monitors surfaced two additional DisplayPort/driver nuances that are fully solved and documented in this repository:
 
 ### 5.1 Waking External Monitors from GPU PCI Runtime Suspend
-When switching the Iiyama ProLite XB3288UHSU monitors back from **HDMI** (Work Laptop) to **DisplayPort** (T430), the monitors do not always emit a physical HPD pulse. If the NVS 5400M has entered low-power PCI runtime suspend (`suspended`), run [`scripts/wake-nouveau-dp.sh`](scripts/wake-nouveau-dp.sh) to wake the GPU and trigger Xwayland/Mutter reconfiguration:
+When switching the Iiyama ProLite XB3288UHSU monitors back from **HDMI** (MacBook Pro) to **DisplayPort** (T430), the monitors do not always emit a physical HPD pulse. If the NVS 5400M has entered low-power PCI runtime suspend (`suspended`), run [`scripts/wake-nouveau-dp.sh`](scripts/wake-nouveau-dp.sh) to wake the GPU and trigger Xwayland/Mutter reconfiguration:
 
 ```bash
 ./scripts/wake-nouveau-dp.sh
@@ -155,12 +155,6 @@ When switching the Iiyama ProLite XB3288UHSU monitors back from **HDMI** (Work L
 
 ### 5.2 Wayland Dual-4K@30Hz SST Watermark Calibration (`waterMark > 39`)
 On Ubuntu 26.04 LTS (Wayland), cold booting dual 4K@30Hz displays can hit `WARN_ON(waterMark > 39)` in `nv50_sor_dp_watermark_sst_calc()` (`disp.c:1678`). See **[`docs/WAYLAND_DUAL_4K_WATERMARK.md`](docs/WAYLAND_DUAL_4K_WATERMARK.md)** for the `25Hz → 30Hz` link training calibration and `~/.config/monitors.xml` persistence guide.
-
-### 5.3 Solving the T430 64KB UEFI NVRAM Halt (`Non-volatile memory is full`)
-
-![ThinkPad T430 64KB UEFI NVRAM Anatomy](assets/nvram-memory-map.svg)
-
-Repeated kernel panics write `efi-pstore` dumps into the T430's tiny **64 KB** UEFI NVRAM, which is already 93.3% full due to factory Secure Boot keys (`26.7 KB`) and Ubuntu's boot-time `sbkeysync` (`secureboot-db.service`). See **[`docs/T430_UEFI_NVRAM_FORENSICS.md`](docs/T430_UEFI_NVRAM_FORENSICS.md)** for the permanent 3-step fix that reclaims **>31.1 KB (~48%)** of free NVRAM.
 
 ---
 
@@ -173,7 +167,6 @@ public-t430-4338-dual4K-nouveau-dp-fix/
 │   ├── hero-banner.png                        # AI-enhanced workstation hero illustration
 │   ├── architecture-topology.svg              # Custom vector diagram: Hybrid GPU & Dual-4K routing
 │   ├── crash-state-machine.svg                # Custom vector diagram: Unpatched vs. Patched flow
-│   ├── nvram-memory-map.svg                   # Custom vector diagram: 64KB UEFI NVRAM forensics
 │   └── mermaid-sources.md                     # Editable Mermaid (.mmd) diagram definitions
 ├── patches/
 │   ├── 0001-drm-nouveau-disp-Prevent-divide-by-zero-after-screen-wake-up.patch
@@ -184,8 +177,7 @@ public-t430-4338-dual4K-nouveau-dp-fix/
 │   └── wake-nouveau-dp.sh                     # Wakes NVS 5400M from PCI runtime suspend after input switch
 └── docs/
     ├── KERNEL_TEST_MATRIX.md                  # Full 2024–2026 kernel test history & LKML timeline
-    ├── WAYLAND_DUAL_4K_WATERMARK.md           # Dual 4K@30Hz SST watermark calibration guide
-    └── T430_UEFI_NVRAM_FORENSICS.md           # T430 64KB UEFI NVRAM & sbkeysync deep-dive
+    └── WAYLAND_DUAL_4K_WATERMARK.md           # Dual 4K@30Hz SST watermark calibration guide
 ```
 
 ### Compiling a New Patched Mainline Kernel in One Command

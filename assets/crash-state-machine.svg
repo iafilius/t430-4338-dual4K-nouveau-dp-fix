@@ -105,7 +105,7 @@
     <text x="78" y="632" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#ffffff">💀 Total System Lockup &amp; Collateral Damage</text>
     <text x="78" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fecdd3">1. Graceful reboot/shutdown hangs waiting on `nvkm-disp`</text>
     <text x="78" y="671" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fecdd3">2. Hard power-button reset required → unclean filesystem (`fsck`)</text>
-    <text x="78" y="689" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fecdd3">3. `efi-pstore` dumps crash log into 64KB UEFI NVRAM → BIOS F1 Halt!</text>
+    <text x="78" y="689" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fecdd3">3. External monitors never recover without full cold reboot</text>
   </g>
 
   <!-- ================= RIGHT COLUMN: PATCHED KERNEL ================= -->
