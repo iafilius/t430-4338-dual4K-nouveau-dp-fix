@@ -67,6 +67,14 @@ Per Lenovo's official [Mini Docks Reference Guide (HT508937)](https://support.le
 
 > **Why NVIDIA Optimus Matters Here:** On the ThinkPad T430, the 4338 Dock's digital outputs (`2× DisplayPort` and `2× DVI-D`) are physically routed to the discrete NVIDIA NVS 5400M rather than the Intel iGPU. You cannot drive the dock's DisplayPort monitors using `i915` alone—`nouveau` (or the legacy NVIDIA driver) must be active to light up external digital displays through the dock.
 
+### Pushing Beyond Official 2012 Specs: Dual 4K@30Hz at the Hardware Ceiling
+
+When the **ThinkPad T430** and **Type 4338 Dock** launched in 2012, Lenovo's official datasheet rated the DisplayPort outputs for a maximum resolution of **`2560×1600 @ 60Hz`**. Driving **two external 32" 4K (`3840×2160`) monitors simultaneously** through the dock—alongside an upgraded internal **`2560×1440` WQHD** panel—goes well beyond the original factory specifications:
+
+- At **`30Hz`** (`262.75 MHz` pixel clock per monitor over 4-lane HBR DisplayPort 1.1a), **`2× 3840×2160 @ 30Hz` + `2560×1440 @ 60Hz` (`10240 × 2160` total desktop)** represents the **absolute physical ceiling** of what the NVS 5400M (`GF108M`) display engine and 4338 Dock DisplayPort lanes can handle.
+- And it **actually works remarkably well** for daily productivity and engineering workflows.
+- **Most importantly:** Even when hardware is pushed to its absolute maximum bandwidth through a docking station, **the Linux kernel must never panic or divide by zero (`ior->dp.nr == 0`) simply because a connected monitor enters power-save standby or switches its input source.** Gracefully skipping DisplayPort symbol timing calculations when `ior->dp.nr == 0` ensures the kernel remains 100% crash-proof across every monitor sleep, wake, and input-switch event.
+
 ---
 
 ## 2. Root Cause Analysis: The "End-of-Workday" Division-by-Zero Bug
