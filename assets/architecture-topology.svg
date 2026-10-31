@@ -112,17 +112,17 @@
   <path d="M 380 368 L 380 426" stroke="#76b900" stroke-width="3" stroke-dasharray="5,3" marker-end="url(#arrowGreen)"/>
   <text x="390" y="405" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#a3e635">Proprietary Dock Connector (SOR / DP PHY)</text>
 
-  <!-- ================= RIGHT TOP: SECONDARY WORK LAPTOP ================= -->
+  <!-- ================= RIGHT TOP: SECONDARY WORK LAPTOP (MACBOOK PRO) ================= -->
   <g filter="url(#shadow)">
     <rect x="720" y="118" width="440" height="175" rx="12" fill="#151d2a" stroke="#f59e0b" stroke-width="2"/>
     <rect x="720" y="118" width="440" height="38" rx="12" fill="#27201c"/>
     <circle cx="744" cy="137" r="6" fill="#f59e0b"/>
-    <text x="760" y="142" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#fef3c7">Secondary Laptop (Work Workstation)</text>
-    <text x="740" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#e2e8f0">Shares the same two 32" 4K monitors via HDMI inputs during work hours.</text>
+    <text x="760" y="142" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#fef3c7">Secondary Laptop: MacBook Pro (Work)</text>
+    <text x="740" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#e2e8f0">Shares both 32" 4K monitors via HDMI inputs (No direct cable to T430).</text>
     <rect x="740" y="196" width="400" height="52" rx="8" fill="#291d12" stroke="#d97706" stroke-width="1.2"/>
     <text x="754" y="216" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="700" fill="#fbbf24">⚡ THE "END-OF-WORKDAY" TRIGGER:</text>
-    <text x="754" y="235" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fde68a">When this laptop sleeps/shuts down → both 4K monitors enter standby</text>
-    <text x="740" y="274" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#fbbf24">Outputs: HDMI Out #1  &amp;  HDMI Out #2 (USB-C / Dock)</text>
+    <text x="754" y="235" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#fde68a">When MacBook Pro sleeps/closes → both 4K monitors enter standby</text>
+    <text x="740" y="274" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#fbbf24">Outputs: 1× Native HDMI Port  &amp;  1× USB-C to HDMI Adapter</text>
   </g>
 
   <!-- ================= BOTTOM: DUAL 32" IIYAMA 4K MONITORS ================= -->
@@ -136,11 +136,11 @@
     <!-- Input Badges -->
     <rect x="456" y="636" width="148" height="42" rx="6" fill="#132a13" stroke="#76b900" stroke-width="1.2"/>
     <text x="466" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#a3e635">1x DisplayPort Input</text>
-    <text x="466" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#bbf7d0">← Dock DP-2 (T430)</text>
+    <text x="466" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#bbf7d0">← 1× Cable (Dock DP-2)</text>
 
     <rect x="618" y="636" width="150" height="42" rx="6" fill="#291d12" stroke="#f59e0b" stroke-width="1.2"/>
     <text x="628" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#fbbf24">2x HDMI Inputs</text>
-    <text x="628" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#fde68a">← Work Laptop HDMI #1</text>
+    <text x="628" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#fde68a">← MBP Native HDMI</text>
   </g>
 
   <!-- Monitor 2 -->
@@ -153,26 +153,26 @@
     <!-- Input Badges -->
     <rect x="831" y="636" width="148" height="42" rx="6" fill="#132a13" stroke="#76b900" stroke-width="1.2"/>
     <text x="841" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#a3e635">1x DisplayPort Input</text>
-    <text x="841" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#bbf7d0">← Dock DP-3 (T430)</text>
+    <text x="841" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#bbf7d0">← 1× Cable (Dock DP-3)</text>
 
     <rect x="993" y="636" width="150" height="42" rx="6" fill="#291d12" stroke="#f59e0b" stroke-width="1.2"/>
     <text x="1003" y="653" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" font-weight="700" fill="#fbbf24">2x HDMI Inputs</text>
-    <text x="1003" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#fde68a">← Work Laptop HDMI #2</text>
+    <text x="1003" y="669" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#fde68a">← MBP USB-C → HDMI</text>
   </g>
 
   <!-- Routing Cables: Dock DP-2 and DP-3 to Monitors -->
   <path d="M 307 514 L 307 657 L 450 657" fill="none" stroke="#76b900" stroke-width="3" marker-end="url(#arrowGreen)"/>
-  <text x="316" y="648" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">DP-2 Cable</text>
+  <text x="316" y="648" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">1× DP Cable (DP-2)</text>
 
   <path d="M 447 514 L 447 538 L 905 538 L 905 550" fill="none" stroke="#76b900" stroke-width="3" marker-end="url(#arrowGreen)"/>
-  <text x="580" y="532" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">DP-3 Cable (SST 4K@30Hz • Watermark Calibrated)</text>
+  <text x="580" y="532" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#a3e635">1× DP Cable (DP-3 • SST 4K@30Hz)</text>
 
   <!-- Routing Cables: Work Laptop HDMI to Monitors -->
   <path d="M 820 293 L 820 420 L 693 420 L 693 550" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrowAmber)"/>
-  <text x="702" y="412" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#fbbf24">HDMI #1 (Input Switch)</text>
+  <text x="698" y="412" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#fbbf24">1× Native HDMI Cable</text>
 
   <path d="M 1068 293 L 1068 550" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrowAmber)"/>
-  <text x="1076" y="420" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#fbbf24">HDMI #2</text>
+  <text x="935" y="420" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" font-weight="700" fill="#fbbf24">1× USB-C → HDMI Cable</text>
 
   <!-- Summary Legend Box Bottom Left -->
   <rect x="40" y="555" width="245" height="138" rx="10" fill="#131b29" stroke="#334155" stroke-width="1.5"/>

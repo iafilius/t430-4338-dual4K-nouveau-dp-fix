@@ -41,9 +41,9 @@ After first debugging and fixing this bug manually in **July 2024** ([GitLab Iss
 | **Integrated GPU (iGPU)** | Intel HD Graphics 4000 | `i915` (`card1-LVDS-1`) | Drives internal 14" **WQHD (`2560×1440 @ 60Hz`)** LCD at offset `(0, 720)` |
 | **Discrete GPU (dGPU)** | NVIDIA NVS 5400M (GF108M Fermi) | `nouveau` (`0000:01:00.0` / `card2`) | Hardwired to the docking station's digital video outputs (`DP-2` & `DP-3`) |
 | **Docking Station** | Lenovo ThinkPad Mini Dock Plus Series 3 (**Model 4338**) | `card2-DP-2` & `card2-DP-3` | Provides dual full-size DisplayPort outputs directly from the NVS 5400M |
-| **External Monitor #1** | **32" Iiyama ProLite XB3288UHSU** (EDID `PL3288UH`) | `card2-DP-2` (`3840×2160 @ 30Hz`) | Left 4K display at `(2560, 0)`. Inputs: **1× DisplayPort** (T430), **2× HDMI** (Work Laptop) |
-| **External Monitor #2** | **32" Iiyama ProLite XB3288UHSU** (EDID `PL3288UH`) | `card2-DP-3` (`3840×2160 @ 30Hz`) | Right 4K display at `(6400, 0)`. Inputs: **1× DisplayPort** (T430), **2× HDMI** (Work Laptop) |
-| **Secondary Laptop** | Work Laptop | Connected via **HDMI #1 & HDMI #2** | Shares both Iiyama 32" 4K monitors during work hours via monitor input switching |
+| **External Monitor #1** | **32" Iiyama ProLite XB3288UHSU** (EDID `PL3288UH`) | `card2-DP-2` (`3840×2160 @ 30Hz`) | Left 4K display at `(2560, 0)`. Connected via **1× DisplayPort cable** from 4338 Dock (`DP-2`) + **1× HDMI cable** from MacBook Pro |
+| **External Monitor #2** | **32" Iiyama ProLite XB3288UHSU** (EDID `PL3288UH`) | `card2-DP-3` (`3840×2160 @ 30Hz`) | Right 4K display at `(6400, 0)`. Connected via **1× DisplayPort cable** from 4338 Dock (`DP-3`) + **1× HDMI cable** from MacBook Pro |
+| **Secondary Laptop** | **Apple MacBook Pro** (Work Laptop) | **1× Native HDMI** + **1× USB-C → HDMI Adapter** | Shares both Iiyama 32" 4K monitors via HDMI inputs (completely independent of the T430; network over Wi-Fi/LAN) |
 
 ---
 

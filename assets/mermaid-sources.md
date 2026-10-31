@@ -21,8 +21,9 @@ flowchart TB
         DP3["Dock Port: card2-DP-3"]
     end
 
-    subgraph WORK["💼 Secondary Laptop (Work Workstation)"]
-        HDMI_OUT["Dual Video Outputs<br/>(HDMI #1 & HDMI #2)"]
+    subgraph WORK["💼 Secondary Laptop: MacBook Pro (Work)"]
+        HDMI1["1× Native HDMI Output"]
+        HDMI2["1× USB-C to HDMI Adapter"]
     end
 
     subgraph MONITORS["🖥️ Dual 32-inch 4K Monitors (Total Span: 10240 × 2160)"]
@@ -31,10 +32,10 @@ flowchart TB
     end
 
     DGPU ==>|"Proprietary Dock Connector"| DOCK
-    DP2 ==>|"DisplayPort Cable #1"| M1
-    DP3 ==>|"DisplayPort Cable #2"| M2
-    HDMI_OUT -.->|"HDMI Input Switch (Work Hours)"| M1
-    HDMI_OUT -.->|"HDMI Input Switch (Work Hours)"| M2
+    DP2 ==>|"1× DisplayPort Cable"| M1
+    DP3 ==>|"1× DisplayPort Cable"| M2
+    HDMI1 -.->|"1× Native HDMI Cable"| M1
+    HDMI2 -.->|"1× USB-C → HDMI Cable"| M2
 ```
 
 ---
