@@ -70,6 +70,11 @@ link_data_rate = (khz * head->asy.or.depth / 8) / ior->dp.nr;   // <-- divide by
 ```
 
 ### Kernel Oops Backtrace (Unpatched Kernel)
+
+> [!TIP]
+> **Debugging Tip — Use SSH from a Second Machine When Screen & Keyboard Are Dead:**
+> When this bug hits, the screens stay black/frozen and the local keyboard no longer responds (switching to a text console via `Ctrl+Alt+F2` does not work either), making the laptop look completely dead. However, the Linux network stack and `sshd` stay alive! By logging in via **SSH from a second laptop**, you can run `sudo dmesg -T` live to catch the `nv50_disp_super_2_2_dp` divide error, see the stuck `kworker` driving the system load above `1.0`, and flush disks with `sync` before power-cycling (since `sudo reboot` also hangs waiting on the dead `nvkm-disp` workqueue).
+
 ```text
 [di jul 23 10:28:25 2024] nouveau 0000:01:00.0: DRM: DDC responded, but no EDID for DP-2
 [di jul 23 10:28:25 2024] nouveau 0000:01:00.0: DRM: DDC responded, but no EDID for DP-3
@@ -83,7 +88,7 @@ link_data_rate = (khz * head->asy.or.depth / 8) / ior->dp.nr;   // <-- divide by
 [di jul 23 10:28:31 2024] nouveau 0000:01:00.0: DRM: base-0: timeout
 ```
 
-*(For the story of how I pinpointed these lines in 2024 using `gdb nv50.o` and `objdump`, and why attempting remote kernel debugging over Ethernet with `kgdboe` hung the target kernel, see **[`docs/KERNEL_DEBUGGING_JOURNEY.md`](docs/KERNEL_DEBUGGING_JOURNEY.md)**).*
+*(For the full story of how I caught this over SSH, pinpointed the exact source line in 2024 using `gdb nv50.o` and `objdump`, and why remote kernel debugging over Ethernet with `kgdboe` hung the target kernel, see **[`docs/KERNEL_DEBUGGING_JOURNEY.md`](docs/KERNEL_DEBUGGING_JOURNEY.md)**).*
 
 ---
 

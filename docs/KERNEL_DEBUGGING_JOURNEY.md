@@ -4,9 +4,18 @@ This document covers the July–September 2024 debugging sessions on my ThinkPad
 
 ---
 
-## 1. Capturing the Crash with Kernel Boot Debug Parameters
+## 1. Capturing the Crash via SSH & Kernel Boot Debug Parameters
 
-To capture DRM and Nouveau logs leading up to the freeze, I configured `/etc/default/grub` with extra debug flags:
+### Why You Need SSH from a Second Machine
+When this crash happens, **all screens stay black or frozen and the local keyboard stops responding completely** (even `Ctrl+Alt+F2` to switch to a virtual console does nothing). Sitting in front of the laptop, it looks like a total hardware lockup.
+
+However, logging in via **SSH from a second computer** (`ssh arjan@192.168.1.57`) revealed that the Linux kernel, networking, and user space were still running in the background:
+- Only the `nvkm-disp` display workqueue had crashed and locked up the display pipeline (`DRM: core notifier timeout` / `base-0: timeout`).
+- Because the crashed kernel worker was stuck in D-state/uninterruptible wait, `uptime` showed the system load climbing above `1.0`, and running `sudo reboot` over SSH hung indefinitely waiting for the display subsystem to shut down.
+- Having an active SSH session made it possible to inspect `sudo dmesg -T` live at the moment of the crash and run `sync` before holding down the power button (avoiding dirty root filesystem `fsck` runs on the next boot).
+
+### Kernel Boot Debug Flags (`/etc/default/grub`)
+To capture full DRM and Nouveau trace logs over SSH leading up to the freeze, I configured `/etc/default/grub` with extra debug flags:
 
 ```bash
 GRUB_CMDLINE_LINUX_DEFAULT="loglevel=6 nouveau.debug=info drm.debug=2"
