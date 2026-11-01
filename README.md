@@ -118,8 +118,30 @@ b4 am EB2FB627-5EFE-4572-81D9-3D965C868C90@xs4all.nl
 git am ./*.mbx
 ```
 
-### Variant B: Diagnostic `nvkm_warn()` Patch (For Local Testing)
-File: [`patches/0001-drm-nouveau-disp-verbose-dmesg-logging.patch`](patches/0001-drm-nouveau-disp-verbose-dmesg-logging.patch) — logs a message to `dmesg` whenever a `lanes = 0` crash is prevented:
+### Variant B: Diagnostic `nvkm_warn()` Patch (With Kernel Logging so You Know a Crash Was Prevented)
+File: [`patches/0001-drm-nouveau-disp-verbose-dmesg-logging.patch`](patches/0001-drm-nouveau-disp-verbose-dmesg-logging.patch) — this is the version I run locally on my T430 so `dmesg` explicitly logs every time a `lanes = 0` division-by-zero crash has been prevented:
+
+```diff
+diff --git a/drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c b/drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c
+index 51c045bdfcbb..38a917ef021c 100644
+--- a/drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c
++++ b/drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c
+@@ -1157,6 +1157,12 @@ nv50_disp_super_2_2_dp(struct nvkm_head *head, struct nvkm_ior *ior)
+ {
+ 	struct nvkm_subdev *subdev = &head->disp->engine.subdev;
+ 
++	/* If the DisplayPort link is inactive (0 lanes), skip configuration */
++	if (ior->dp.nr == 0) {
++		nvkm_warn(subdev, "DP link is inactive (lanes = 0), skipping display configuration.\n");
++		return;
++	}
++
+ 	const u32 khz = head->asy.hz / 1000;
+ 	const u32 linkKBps = ior->dp.bw * 27000;
+ 	const u32 symbol = 100000;
+```
+
+Example `dmesg` output when a crash is prevented:
 ```text
 [45162.232371] nouveau 0000:01:00.0: disp: DP link is inactive (lanes = 0), skipping display configuration.
 ```
