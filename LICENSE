@@ -25,3 +25,4 @@ Note on Linux Kernel Patches (`patches/`):
 All Linux kernel patch files under `patches/` modify the Linux kernel (`drivers/gpu/drm/nouveau/`)
 and are provided under the GNU General Public License v2.0 only (`GPL-2.0-only`)
 with a Linux Kernel Developer's Certificate of Origin (`Signed-off-by: Arjan Filius <iafilius@xs4all.nl>`).
+

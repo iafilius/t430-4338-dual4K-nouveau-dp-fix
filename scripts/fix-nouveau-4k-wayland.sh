@@ -143,3 +143,4 @@ else
 fi
 
 echo "[+] Done! Full 10240x2160 desktop active (2560x1440@60Hz + 2x 3840x2160@30Hz)."
+
