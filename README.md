@@ -17,7 +17,7 @@
 
 ## Overview & Motivation
 
-Can a classic **Lenovo ThinkPad T430** running modern mainline Linux kernels (`6.8.x` through `7.1.3+`) reliably drive an internal **WQHD (`2560×1440`)** panel alongside **two external 32-inch 4K (`3840×2160`) monitors** (**10240 × 2160 total desktop canvas**) using the open-source **Nouveau** driver?
+Can a classic **Lenovo ThinkPad T430** equipped with the discrete **NVIDIA NVS 5400M (`GF108M` Fermi) chipset**—a GPU that has been **unsupported (End-of-Life) by NVIDIA for years**, making the proprietary vendor driver harder and harder to keep working on newer Linux kernels—reliably drive an internal **WQHD (`2560×1440`)** panel alongside **two external 32-inch 4K (`3840×2160`) monitors** (**10240 × 2160 total desktop canvas**) on modern mainline kernels (`6.8.x` through `7.1.3+`) and **Wayland** (replacing X11) using the open-source **Nouveau** driver?
 
 **Yes—with a 4-line kernel patch.**
 
@@ -25,14 +25,14 @@ Out of the box on unpatched mainline kernels, whenever the two external 4K Displ
 
 After first debugging and fixing this bug manually in **July 2024** ([GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377)), and re-encountering the exact same freeze when testing a clean mainline **`7.1.3`** kernel in **July 2026**, I created this repository as a **permanent, self-contained engineering reference**—both to assist upstream Nouveau maintainers and to help fellow ThinkPad / Nouveau multi-monitor users who hit similar DisplayPort link-training crashes.
 
-### Why `nouveau` Instead of the Proprietary NVIDIA Driver? (Driver History)
+### Why `nouveau` + Wayland Instead of the Proprietary NVIDIA Driver? (Driver History)
 
-For many years, this ThinkPad T430 + 4338 Dock setup ran on NVIDIA's proprietary binary driver (the legacy `390.xx` series for Fermi GPUs). When I first tested the open-source **`nouveau`** driver many years ago, it was completely unusable for a docked dual-monitor setup.
+For many years, this ThinkPad T430 (**NVIDIA NVS 5400M / `GF108M` chipset**) + 4338 Dock setup ran on NVIDIA's proprietary binary driver (the legacy `390.xx` series) under X11. When I first tested the open-source **`nouveau`** driver many years ago, it was completely unusable for a docked dual-monitor setup.
 
-Over time, however, staying on the proprietary NVIDIA driver became increasingly painful:
-1. **End-of-Life Kernel Breakage:** NVIDIA ended support for the Fermi (`GF108M` / NVS 5400M) architecture (`390.xx`), making it harder and harder to patch and compile the out-of-tree DKMS module against newer Linux kernels.
-2. **Imperfect Stability:** Even when it compiled, the proprietary driver was never 100% stable on hybrid Optimus laptop/dock setups and suffered from its own intermittent freezes and modesetting glitches.
-3. **The 2024 `nouveau` Breakthrough:** When I re-evaluated the in-tree **`nouveau`** driver in **2024**, the difference was night and day. `nouveau` handled the hybrid Intel HD 4000 (`i915`) + NVIDIA NVS 5400M (`nouveau`) PRIME display offloading and dual 4K@30Hz DisplayPort outputs effortlessly—**except for one showstopper bug**: the `nv50_disp_super_2_2_dp()` division-by-zero crash whenever the external monitors went into standby. With this 4-line kernel patch applied, `nouveau` has proven rock-solid across multiple years of daily production use.
+Over time, however, staying on the proprietary NVIDIA vendor driver became untenable:
+1. **Abandoned by Vendor & Kernel Breakage:** The NVS 5400M (`GF108M` Fermi) chipset has been **End-of-Life and unsupported by NVIDIA for years**. With every newer Linux kernel release, it became harder and harder to patch and compile the out-of-tree `390.xx` DKMS driver to get the displays working at all.
+2. **Imperfect Stability & No Modern Wayland Support:** Even when it still compiled under X11, the proprietary driver was never 100% stable on hybrid Optimus laptop/dock setups, suffered from intermittent glitches, and lacked support for **Wayland** (the modern replacement for X11).
+3. **The 2024 `nouveau` + Wayland Breakthrough:** When I re-evaluated the in-tree **`nouveau`** driver around **2024**, the difference was night and day. Combined with **Wayland** (replacing X11), `nouveau` handled the hybrid Intel HD 4000 (`i915`) + NVIDIA NVS 5400M (`nouveau`) PRIME display offloading and dual 4K@30Hz external DisplayPort outputs smoothly—**except for one showstopper bug**: the `nv50_disp_super_2_2_dp()` division-by-zero crash whenever the external monitors went into standby. With this 4-line kernel patch applied, `nouveau` + Wayland has proven completely usable and rock-solid across daily production use.
 
 ---
 
