@@ -1,31 +1,31 @@
-# The 2024 Kernel Debugging Journey: `gdb`, `objdump`, and the `kgdboe` Remote Debugging Dead-End
+# The 2024 Kernel Debugging Journey: `gdb`, `objdump`, and the `kgdboe` Dead End
 
-This document chronicles the original July–September 2024 investigation on the ThinkPad T430 (`6.8.0-38-generic` → `6.9.9-custom` → `6.10.2-custom`) that tracked down the `nv50_disp_super_2_2_dp` division-by-zero crash, including the tools that worked (`objdump`, `gdb` on module `.o` files, kernel boot debug flags), the dead ends (`gdb vmlinux` missing module symbols, `kgdboe` hanging the target kernel over UDP, and testing an early `nouveau_dp.c` AUX power patch), and the evolution of the fix.
+This document covers the July–September 2024 debugging sessions on my ThinkPad T430 (`6.8.0-38-generic` → `6.9.9-custom` → `6.10.2-custom`) to track down the `nv50_disp_super_2_2_dp` division-by-zero crash: what worked (`objdump`, `gdb` on `nv50.o`, kernel boot debug flags), what turned into a dead end (`gdb vmlinux` missing module symbols, `kgdboe` hanging the target kernel over UDP, and testing a `nouveau_dp.c` AUX power change), and how the patch evolved.
 
 ---
 
 ## 1. Capturing the Crash with Kernel Boot Debug Parameters
 
-To capture detailed DRM and Nouveau state transitions leading up to the freeze, `/etc/default/grub` was configured with verbose debug parameters:
+To capture DRM and Nouveau logs leading up to the freeze, I configured `/etc/default/grub` with extra debug flags:
 
 ```bash
 GRUB_CMDLINE_LINUX_DEFAULT="loglevel=6 nouveau.debug=info drm.debug=2"
-# And for deeper DRM atomic / DP AUX tracing:
+# And for deeper DRM / DP AUX tracing:
 # drm.debug=14 log_buf_len=16M
 ```
 
-When the external Iiyama 4K DisplayPort monitors went into standby, `dmesg` recorded the fatal division error (`divide error: 0000 [#1] PREEMPT SMP PTI` / `Oops: divide error`):
-- On non-inlined builds (`6.9.9` / `7.1.3`):
+Whenever the external Iiyama 4K DisplayPort monitors went into standby, `dmesg` logged a division error (`divide error: 0000 [#1] PREEMPT SMP PTI` / `Oops: divide error`):
+- On builds where `nv50_disp_super_2_2_dp` was not inlined (`6.9.9` / `7.1.3`):
   `RIP: 0010:nv50_disp_super_2_2_dp+0xa7/0x320 [nouveau]`
-- On compiler-inlined builds (where `static void nv50_disp_super_2_2_dp` was inlined into `nv50_disp_super_2_2`):
+- On builds where the compiler inlined `static void nv50_disp_super_2_2_dp` into `nv50_disp_super_2_2`:
   `RIP: 0010:nv50_disp_super_2_2+0x284/0x430 [nouveau]`
 
 ---
 
-## 2. Pinpointing the Exact C Source Line (`vmlinux` vs. `nv50.o`)
+## 2. Finding the Exact C Source Line (`vmlinux` vs. `nv50.o`)
 
 ### First Attempt: `gdb vmlinux` (Why It Failed)
-Initially, we tried loading the uncompressed debug kernel image (`vmlinux`) into GDB:
+My first attempt was loading the uncompressed debug kernel image (`vmlinux`) into GDB:
 
 ```text
 $ gdb /usr/lib/debug/vmlinux-6.9.9-custom
@@ -34,10 +34,10 @@ Reading symbols from /usr/lib/debug/vmlinux-6.9.9-custom...
 No symbol "nv50_disp_super_2_2" in current context.
 ```
 
-Because `CONFIG_DRM_NOUVEAU=m` builds `nouveau` as a loadable kernel module (`nouveau.ko`) rather than statically linking it into `vmlinux`, none of the `nv50_disp_*` symbols exist inside `vmlinux`.
+Because `CONFIG_DRM_NOUVEAU=m` builds `nouveau` as a loadable kernel module (`nouveau.ko`) rather than compiling it into `vmlinux`, none of the `nv50_disp_*` symbols are in `vmlinux`.
 
-### Breakthrough: Inspecting `nv50.o` with `objdump` and `gdb`
-Instead of `vmlinux`, we pointed `objdump` and `gdb` directly at the compiled object file (`drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.o`) inside the kernel build tree:
+### What Worked: Running `objdump` and `gdb` on `nv50.o`
+Instead of `vmlinux`, I ran `objdump` and `gdb` directly against the compiled module object file (`drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.o`) in the kernel build tree:
 
 ```bash
 cd ~/kernel/linux-6.9.9/drivers/gpu/drm/nouveau/nvkm/engine/disp
@@ -45,7 +45,7 @@ objdump -SdCg nv50.o | less
 gdb nv50.o
 ```
 
-Running `list *(nv50_disp_super_2_2+0x284)` inside `gdb nv50.o` immediately resolved the instruction offset to the exact C source lines inside `nv50_disp_super_2_2_dp()`:
+Running `list *(nv50_disp_super_2_2+0x284)` inside `gdb nv50.o` mapped the instruction offset straight to the C source lines inside `nv50_disp_super_2_2_dp()`:
 
 ```text
 (gdb) list *(nv50_disp_super_2_2+0x284)
@@ -62,16 +62,16 @@ Running `list *(nv50_disp_super_2_2+0x284)` inside `gdb nv50.o` immediately reso
 1098
 ```
 
-Inspecting the surrounding lines showed three separate divisions by `ior->dp.nr` (`12 / ior->dp.nr`, `36 / ior->dp.nr`, and `(khz * head->asy.or.depth / 8) / ior->dp.nr`) with no check verifying that `ior->dp.nr > 0`.
+Looking at that function showed three divisions by `ior->dp.nr` (`12 / ior->dp.nr`, `36 / ior->dp.nr`, and `(khz * head->asy.or.depth / 8) / ior->dp.nr`) with no check that `ior->dp.nr` is non-zero.
 
 ---
 
-## 3. The Remote Kernel Debugging Dead-End (`kgdboe` over Ethernet)
+## 3. Remote Kernel Debugging Dead End (`kgdboe` over Ethernet)
 
-Before settling on printk/register tracing, on **August 18, 2024**, we attempted to set up live **remote kernel debugging over Ethernet (`kgdboe`)** from a second Linux machine (`192.168.1.58`) to inspect the T430 (`192.168.1.57`) live when the crash occurred.
+On **August 18, 2024**, I also tried setting up live **remote kernel debugging over Ethernet (`kgdboe`)** from a second Linux machine (`192.168.1.58`) to inspect the T430 (`192.168.1.57`) when the crash happened.
 
-### Setting up `sysprogs/kgdboe` on the T430 Target (`192.168.1.57`)
-We cloned and compiled [`sysprogs/kgdboe`](https://github.com/sysprogs/kgdboe) (Kernel GDB over Ethernet) against the running custom kernel (`6.10.2-custom`) and loaded it via `kallsyms_lookup_name`:
+### Loading `sysprogs/kgdboe` on the T430 (`192.168.1.57`)
+I cloned and compiled [`sysprogs/kgdboe`](https://github.com/sysprogs/kgdboe) (Kernel GDB over Ethernet) against the running `6.10.2-custom` kernel and loaded it using the `kallsyms_lookup_name` address:
 
 ```bash
 git clone https://github.com/sysprogs/kgdboe.git
@@ -83,7 +83,7 @@ sudo insmod kgdboe.ko \
   device_name=eth0
 ```
 
-Loading `kgdboe.ko` succeeded in `dmesg`, forcing the T430 into single-core mode (taking CPUs 1 through 7 offline to avoid SMP race conditions in the network polling driver):
+Loading `kgdboe.ko` worked at first: it forced the T430 into single-core mode (taking CPUs 1–7 offline) and started listening on UDP port `31337`:
 
 ```text
 [Aug18 11:02] kgdboe: Single-core mode enabled. Shutting down all cores except #0. This is slower, but safer.
@@ -102,8 +102,8 @@ Loading `kgdboe.ko` succeeded in `dmesg`, forcing the T430 into single-core mode
 [  +0.000003]   target remote udp:192.168.1.57:31337
 ```
 
-### Why `kgdboe` Turned Out to Be a Dead End
-When we launched `gdb ./vmlinux` on the remote host and attached to the UDP socket:
+### Why It Was a Dead End
+When I started `gdb ./vmlinux` on the other machine and connected over UDP:
 
 ```text
 (gdb) target remote udp:192.168.1.57:31337
@@ -112,14 +112,14 @@ Some events may be lost, rendering further debugging impossible.
 Malformed response to offset query, QCfffffffe
 ```
 
-The moment GDB sent its initial packet over UDP port `31337`, it returned `Malformed response to offset query, QCfffffffe` and **the T430 target kernel hard-locked completely** (*"En dan hangt de remote kernel"*). Between UDP packet loss in netpoll, modern kernel preemption/lockdep checks, and `kgdboe`'s out-of-tree hacks, remote kernel debugging over Ethernet proved completely unusable on 6.10.x—forcing us back to targeted `nvkm_error()` / `nvkm_warn()` instrumentation and object-file disassembly.
+As soon as GDB connected over UDP port `31337`, it returned `Malformed response to offset query, QCfffffffe` and **the remote kernel on the T430 hung completely** (*"En dan hangt de remote kernel"*). That made `kgdboe` a dead end on `6.10.x`, so I went back to `nvkm_error()` / `nvkm_warn()` logging and object disassembly.
 
 ---
 
-## 4. Testing Candidate Fixes & Evolution of the Patch (Aug–Sep 2024)
+## 4. Testing Candidate Fixes & Refining the Patch (Aug–Sep 2024)
 
-### 4.1 Testing Lyude Paul's `nouveau_dp.c` AUX Power Patch (Did Not Fix the Crash)
-During initial discussions on [GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377), we also tested a hypothesis in `drivers/gpu/drm/nouveau/nouveau_dp.c` (commit `50994e2c0ee2` in our local test tree, `"lyude paul patch"`), commenting out the `drm_dp_dpcd_set_powered(&nv_connector->aux, false);` call when `ret == NOUVEAU_DP_NONE`:
+### 4.1 Testing the `nouveau_dp.c` AUX Power Change (Did Not Fix the Crash)
+During early discussions on [GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377), I also tested commenting out `drm_dp_dpcd_set_powered(&nv_connector->aux, false);` in `drivers/gpu/drm/nouveau/nouveau_dp.c` (local commit `50994e2c0ee2`):
 
 ```c
 // Tested in drivers/gpu/drm/nouveau/nouveau_dp.c (Aug 2024):
@@ -127,13 +127,13 @@ if (ret == NOUVEAU_DP_NONE)
     // drm_dp_dpcd_set_powered(&nv_connector->aux, false);
 ```
 
-While aimed at DP AUX power state handling, commenting out that line did **not** prevent `ior->dp.nr` from becoming `0` when the monitors entered standby, nor did it stop `nv50_disp_super_2_2_dp()` from dividing by zero.
+That did not stop `ior->dp.nr` from dropping to `0` when the monitors went into standby, and the kernel still crashed in `nv50_disp_super_2_2_dp()`.
 
-### 4.2 Evolution from Caller-Side Guard (`nv50_disp_super_2_2`) to Callee Guard (`nv50_disp_super_2_2_dp`)
-Our very first working fix in August 2024 (local commits `1aedc41b40b7` and `66a3fdd3e368`) guarded the call site inside `nv50_disp_super_2_2()` and logged an explicit `"ArFi: ior->dp.nr == 0"` marker:
+### 4.2 Moving the Guard from `nv50_disp_super_2_2()` into `nv50_disp_super_2_2_dp()`
+My first working fix in August 2024 (local commits `1aedc41b40b7` and `66a3fdd3e368`) checked `ior->dp.nr != 0` at the call site in `nv50_disp_super_2_2()` and logged `"ArFi: ior->dp.nr == 0"`:
 
 ```c
-// Initial Aug 2024 prototype at the caller in nv50_disp_super_2_2():
+// Initial Aug 2024 check in nv50_disp_super_2_2():
 if (ior->type == SOR && ior->asy.proto == DP) {
     if (ior->dp.nr != 0) {
         nv50_disp_super_2_2_dp(head, ior); // only execute when dp.nr > 0
@@ -143,9 +143,9 @@ if (ior->type == SOR && ior->asy.proto == DP) {
 }
 ```
 
-Sure enough, the next time the monitors went into standby, instead of a fatal kernel oops and frozen laptop, `dmesg` cleanly logged `ArFi: ior->dp.nr == 0` and the system stayed 100% responsive!
+The next time the monitors went into standby, instead of a kernel oops and a frozen laptop, `dmesg` logged `ArFi: ior->dp.nr == 0` and the system kept running normally.
 
-To make the fix self-contained and idiomatic for upstream submission, we moved the guard directly to the top of `nv50_disp_super_2_2_dp()`:
+For upstream submission, I moved that check to the start of `nv50_disp_super_2_2_dp()` itself:
 
 ```c
 	/* If the DisplayPort link is inactive (0 lanes), skip configuration */
@@ -155,13 +155,13 @@ To make the fix self-contained and idiomatic for upstream submission, we moved t
 
 ---
 
-## 5. Serendipitous Discovery: The `lshw -c video` Display Wake-Up Trick
+## 5. Finding the `lshw -c video` Display Wake-Up Trick
 
-Once the kernel no longer crashed when the monitors went to sleep, we noticed a secondary quirk: when switching the Iiyama 4K monitors back from the work laptop (HDMI) to the T430 (DisplayPort), the screens sometimes stayed black because the monitors didn't send an HPD pulse and the NVIDIA GPU had entered PCI runtime suspend.
+Once the kernel no longer crashed on monitor standby, I noticed a smaller quirk: when switching the Iiyama 4K monitors back from the MacBook Pro (HDMI) to the T430 (DisplayPort), the screens sometimes stayed black because the monitors did not send a new HPD pulse and the NVIDIA GPU had gone into PCI runtime suspend.
 
-While inspecting sysfs attributes under `/sys/devices/pci0000:00/0000:00:01.0/0000:01:00.0/graphics/fb1` in July 2024, we ran `lshw -c video` to check the PCI card state—and **both 4K monitors suddenly lit up!**
+While looking around `/sys/devices/pci0000:00/0000:00:01.0/0000:01:00.0/graphics/fb1` in July 2024, I ran `lshw -c video`—and both 4K monitors woke up and came back on.
 
-From `~/kernel/nouveau-debug/readme.txt` (July 2024):
+From my notes in `~/kernel/nouveau-debug/readme.txt` (July 2024):
 > *"Huh? now xrandr shows all screens again!!! as if it was waked-up!!! I think i saw the backlight go on during: `lshw -c video`"*
 
-Querying the PCI configuration space via `lshw -c video` forced the Linux kernel to wake `0000:01:00.0` (the NVS 5400M) out of PCI runtime suspend (`D3cold`/`D3hot` → `D0`), which in turn prompted `nouveau` and `xrandr` to re-detect both DisplayPort outputs. That discovery became the basis for [`scripts/wake-nouveau-dp.sh`](../scripts/wake-nouveau-dp.sh).
+Probing PCI via `lshw -c video` wakes `0000:01:00.0` (the NVS 5400M) out of PCI runtime suspend, allowing `nouveau` and `xrandr` to re-detect both DisplayPort monitors. That became the basis for [`scripts/wake-nouveau-dp.sh`](../scripts/wake-nouveau-dp.sh).

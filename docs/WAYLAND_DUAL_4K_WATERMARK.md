@@ -1,41 +1,40 @@
-# Wayland Dual-4K@30Hz Link Training & Watermark Bounds Calibration
+# Wayland Dual-4K@30Hz Link Training & Watermark Setup (`waterMark > 39`)
 
-When driving **two external 32" 4K monitors** (**Iiyama ProLite XB3288UHSU**, EDID `PL3288UH`, `3840x2160`) simultaneously over the **Lenovo ThinkPad Mini Dock Plus Series 3 (Model 4338)** (`card2-DP-2` and `card2-DP-3`) alongside the internal **14" WQHD (`2560x1440`)** panel (`card1-LVDS-1`), a secondary display initialization bug can occur on modern Wayland compositors (Ubuntu 26.04 LTS / GNOME Mutter).
-
----
-
-## 1. Symptom on Cold Boot (Wayland Atomic Modeset)
-
-After upgrading to Ubuntu 26.04 LTS (Wayland session), cold booting with both 4K monitors attached caused the external displays to lose sync or stay dark during the initial atomic modeset, while `dmesg` logged a kernel `WARN_ON` stack trace in `drivers/gpu/drm/nouveau/dispnv50/disp.c`.
+When driving **two external 32" 4K monitors** (**Iiyama ProLite XB3288UHSU**, EDID `PL3288UH`, `3840×2160`) through the **Lenovo Type 4338 Dock** (`card2-DP-2` and `card2-DP-3`) alongside the internal **14" WQHD (`2560×1440`)** panel (`card1-LVDS-1`), you can hit a secondary display initialization issue on Wayland (Ubuntu 26.04 LTS / GNOME Mutter).
 
 ---
 
-## 2. Root Cause: SST Watermark Overflow (`waterMark > 39`)
+## 1. Symptom on Cold Boot
 
-Inside `drivers/gpu/drm/nouveau/dispnv50/disp.c` (around line 1678, in `nv50_sor_dp_watermark_sst_calc`), the Nouveau display driver enforces a strict hardware FIFO watermark bound for Single-Stream Transport (SST) DisplayPort links:
+After upgrading to Ubuntu 26.04 LTS (Wayland), cold booting with both 4K monitors attached sometimes left one or both external monitors dark during the initial modeset, with `dmesg` logging a `WARN_ON` in `drivers/gpu/drm/nouveau/dispnv50/disp.c`.
+
+---
+
+## 2. Cause: SST Watermark Limit (`waterMark > 39`)
+
+In `drivers/gpu/drm/nouveau/dispnv50/disp.c` (around line 1678, in `nv50_sor_dp_watermark_sst_calc`), `nouveau` checks the FIFO watermark limit for Single-Stream Transport (SST) DisplayPort links:
 
 ```c
 if (WARN_ON(waterMark > 39 || waterMark > numSymbolsPerLine))
     return -EINVAL;
 ```
 
-On the GF108M (NVS 5400M) DisplayPort 1.1a HBR controller, requesting an uncalibrated cold-boot atomic modeset at `3840x2160 @ 30.00Hz` across both SOR pipes can cause the initial untimed pixel-clock symbol calculation to exceed `waterMark > 39`, returning `-EINVAL` and aborting `nvif_outp_dp_sst(...)` before link symbols are pushed to the physical PHY.
+On the NVS 5400M (`GF108M`) DisplayPort 1.1a HBR controller, an uncalibrated cold-boot modeset at `3840×2160 @ 30.00Hz` across both pipes can exceed `waterMark > 39`, returning `-EINVAL` and aborting link training on the second monitor.
 
 ---
 
-## 3. Resolution: Frequency Stepping & `monitors.xml` Profile Lock
+## 3. Workaround: `25Hz → 30Hz` Stepping & `~/.config/monitors.xml`
 
-### Step 1: Initial Link Training via 25.00Hz Stepping
-If a cold DisplayPort link fails to train directly at `30.00Hz`:
-1. Initialize the 4K outputs at `3840x2160 @ 25.00Hz`. At `25.00Hz`, the symbol rate remains comfortably below the `waterMark <= 39` ceiling, allowing both `DP-2` and `DP-3` lanes to train and lock cleanly.
-2. Once the link is active, step the refresh rate up to `3840x2160 @ 30.00Hz`. The transition succeeds with zero `WARN_ON` errors in `dmesg`.
+### Step 1: Bring Up the Link at `25.00Hz` First
+If a cold DisplayPort link fails to come up directly at `30.00Hz`:
+1. Set the 4K outputs to `3840×2160 @ 25.00Hz` first. At `25.00Hz`, the symbol rate stays below the `waterMark <= 39` limit, so both `DP-2` and `DP-3` train cleanly.
+2. Once both displays are active, switch them to `3840×2160 @ 30.00Hz`.
 
-### Step 2: Locking the Calibrated Canvas in `~/.config/monitors.xml`
-GNOME Mutter persists multi-monitor geometry in `~/.config/monitors.xml`. Ensuring the calibrated `10240 × 2160` layout is stored as the primary configuration (and pruning stale historical profiles) guarantees clean modesets across logins:
+### Step 2: Save the Layout in `~/.config/monitors.xml`
+GNOME Mutter stores monitor layouts in `~/.config/monitors.xml`. Keeping the calibrated `10240 × 2160` layout as the active entry (and removing old conflicting profiles) ensures Mutter applies the working modeset on login:
 
 | Connector | Display Panel | Resolution | Refresh Rate | Canvas Offset `(X, Y)` | Role |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `card1-LVDS-1` | Internal 14" WQHD LCD (Intel HD 4000) | `2560 × 1440` | `60.00 Hz` | `(0, 720)` | Primary Panel |
-| `card2-DP-2` | Iiyama ProLite XB3288UHSU #1 (32" 4K) | `3840 × 2160` | `30.00 Hz` | `(2560, 0)` | Left 4K External |
-| `card2-DP-3` | Iiyama ProLite XB3288UHSU #2 (32" 4K) | `3840 × 2160` | `30.00 Hz` | `(6400, 0)` | Right 4K External |
-
+| `card1-LVDS-1` | Internal 14" WQHD LCD (Intel HD 4000) | `2560 × 1440` | `60.00 Hz` | `(0, 720)` | Internal Laptop Screen |
+| `card2-DP-2` | Iiyama ProLite XB3288UHSU #1 (32" 4K) | `3840 × 2160` | `30.00 Hz` | `(2560, 0)` | Left 4K Monitor |
+| `card2-DP-3` | Iiyama ProLite XB3288UHSU #2 (32" 4K) | `3840 × 2160` | `30.00 Hz` | `(6400, 0)` | Right 4K Monitor |
