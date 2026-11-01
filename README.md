@@ -33,8 +33,8 @@ I first tracked down and patched this bug in **July 2024** ([GitLab Issue #377](
 
 | If you are... | Start here |
 | :--- | :--- |
-| **A Linux Kernel / Nouveau Maintainer** | [Section 2: Root Cause & Backtrace](#2-root-cause-the-end-of-workday-division-by-zero-bug) • [Section 3: The Patch & `b4 am`](#3-the-kernel-patch-nv50c) • [`docs/KERNEL_TEST_MATRIX.md`](docs/KERNEL_TEST_MATRIX.md) |
-| **A ThinkPad T430 / 4338 Dock / Legacy NVIDIA User** | [`docs/HARDWARE_AND_DRIVER_HISTORY.md`](docs/HARDWARE_AND_DRIVER_HISTORY.md) • [Section 4: Building & Scripts](#4-building-the-kernel--helper-scripts) • [`docs/WAYLAND_DUAL_4K_WATERMARK.md`](docs/WAYLAND_DUAL_4K_WATERMARK.md) |
+| **A Linux Kernel / Nouveau Maintainer** | [Section 2: Root Cause & Backtrace](#2-root-cause-the-end-of-workday-division-by-zero-bug) • [Section 3: The Patch & `b4 am`](#3-the-kernel-patch-nv50c--tested-kernels) • [`docs/KERNEL_TEST_MATRIX.md`](docs/KERNEL_TEST_MATRIX.md) |
+| **A ThinkPad T430 / 4338 Dock / Legacy NVIDIA User** | [`docs/HARDWARE_AND_DRIVER_HISTORY.md`](docs/HARDWARE_AND_DRIVER_HISTORY.md) • [Section 4: Building & Scripts](#4-building-the-kernel-helper-scripts--deep-dive-docs) • [`docs/WAYLAND_DUAL_4K_WATERMARK.md`](docs/WAYLAND_DUAL_4K_WATERMARK.md) |
 | **Interested in the Kernel Debugging Backstory** | [`docs/KERNEL_DEBUGGING_JOURNEY.md`](docs/KERNEL_DEBUGGING_JOURNEY.md) (`gdb nv50.o`, `objdump`, and why remote debugging via `kgdboe` failed) |
 
 ---
@@ -150,6 +150,9 @@ Full details and LKML correspondence are in **[`docs/KERNEL_TEST_MATRIX.md`](doc
 
 # 3. Wake the NVS 5400M from PCI runtime suspend when switching monitors back from HDMI to DP:
 ./scripts/wake-nouveau-dp.sh
+
+# 4. Train dual 4K@30Hz Wayland links via 25Hz->30Hz stepping (or pass --write-config for ~/.config/monitors.xml):
+./scripts/fix-nouveau-4k-wayland.sh
 ```
 
 ### Documentation Index (`docs/` & `assets/`)

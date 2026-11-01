@@ -25,10 +25,12 @@ On the NVS 5400M (`GF108M`) DisplayPort 1.1a HBR controller, an uncalibrated col
 
 ## 3. Workaround: `25Hz → 30Hz` Stepping & `~/.config/monitors.xml`
 
-### Step 1: Bring Up the Link at `25.00Hz` First
+### Step 1: Bring Up the Link at `25.00Hz` First (or Run `scripts/fix-nouveau-4k-wayland.sh`)
 If a cold DisplayPort link fails to come up directly at `30.00Hz`:
 1. Set the 4K outputs to `3840×2160 @ 25.00Hz` first. At `25.00Hz`, the symbol rate stays below the `waterMark <= 39` limit, so both `DP-2` and `DP-3` train cleanly.
 2. Once both displays are active, switch them to `3840×2160 @ 30.00Hz`.
+
+You can run [`scripts/fix-nouveau-4k-wayland.sh`](../scripts/fix-nouveau-4k-wayland.sh) to perform the `25Hz → 30Hz` step-up automatically (or run `./scripts/fix-nouveau-4k-wayland.sh --write-config` to write a clean `~/.config/monitors.xml` profile).
 
 ### Step 2: Save the Layout in `~/.config/monitors.xml`
 GNOME Mutter stores monitor layouts in `~/.config/monitors.xml`. Keeping the calibrated `10240 × 2160` layout as the active entry (and removing old conflicting profiles) ensures Mutter applies the working modeset on login:
