@@ -137,12 +137,22 @@ Looking at `nv50_disp_super_2_2_dp()` in `nv50.c` immediately showed three divis
 
 ---
 
-## 3. Remote Kernel Debugging Dead End (`kgdboe` over Ethernet)
+## 3. Remote Kernel Debugging Dead End (`kgdboe` over Ethernet) & Current Status
 
-On **August 18, 2024**, I also tried setting up live **remote kernel debugging over Ethernet (`kgdboe`)** from a second Linux machine (`192.168.1.58`) to inspect the T430 (`192.168.1.57`) when the crash happened.
+On **August 18, 2024**, I also tried setting up live **remote kernel debugging over Ethernet (`kgdboe`)** from a second Linux machine (`192.168.1.58`) to inspect the T430 (`192.168.1.57`) when the crash happened, and reported my findings upstream in **[`sysprogs/kgdboe` Issue #21 ("Any plans for recent kernels? (6.11)")](https://github.com/sysprogs/kgdboe/issues/21)**.
 
-### Loading `sysprogs/kgdboe` on the T430 (`192.168.1.57`)
-I cloned and compiled [`sysprogs/kgdboe`](https://github.com/sysprogs/kgdboe) (Kernel GDB over Ethernet) against the running `6.10.2-custom` kernel and loaded it using the `kallsyms_lookup_name` address:
+### 3.1 Step 1: Compile Errors & Warnings on Kernel 6.9+ / 6.10+ / 6.11-rc3 (Aug 2024)
+In August 2024, [`sysprogs/kgdboe`](https://github.com/sysprogs/kgdboe) had not been updated since kernel 5.15 / 6.2. Compiling it against `6.9.9-custom`, `6.10.2-custom`, and `6.11.0-rc3-custom` immediately ran into kernel API breakages and compiler errors/warnings:
+- **Removed/Renamed Kernel APIs in 6.9+:**
+  - `nethook.c:202`: `nr_irqs` was no longer exported to modules (had to be replaced with `irq_get_nr_irqs()`).
+  - `irqsync.c:45`: `del_timer(&mgr->timer)` was removed in 6.9+ in favor of `timer_delete_sync(&mgr->timer)` (and `from_timer()` was later replaced by `timer_container_of()` in 6.16+).
+  - `kgdboe_main.c`: `MODPOST` complained about a missing `MODULE_DESCRIPTION()`.
+- **Pointer Conversion & Ring-Buffer Warnings in `kgdboe_io.c`:**
+  - `kgdboe_io.c:175`: `initialization of 'int *' from 'long unsigned int' makes pointer from integer without a cast [-Wint-conversion]` on `int *_gro_normal_batch = kallsyms_lookup_name("gro_normal_batch");` (which newer GCC treats as a build error unless cast to `(int *)`).
+  - `kgdboe_io.c:88`: `-Wmisleading-indentation` on `while (s_IncomingRingBufferReadPosition == s_IncomingRingBufferWritePosition)` without a trailing semicolon.
+
+### 3.2 Step 2: Loading `kgdboe.ko` Worked, Followed by `QCfffffffe` & a Hung Kernel
+After patching those build issues so `kgdboe.ko` compiled cleanly, I loaded it on the T430 (`192.168.1.57`) by passing the `kallsyms_lookup_name` address from `/proc/kallsyms` (since `kallsyms_lookup_name` is no longer exported to modules since Linux 5.7):
 
 ```bash
 git clone https://github.com/sysprogs/kgdboe.git
@@ -154,27 +164,21 @@ sudo insmod kgdboe.ko \
   device_name=eth0
 ```
 
-Loading `kgdboe.ko` worked at first: it forced the T430 into single-core mode (taking CPUs 1–7 offline) and started listening on UDP port `31337`:
+Loading `kgdboe.ko` succeeded at first: it forced the T430 into single-core mode (taking CPUs 1–7 offline) and started listening on UDP port `31337`:
 
 ```text
-[Aug18 11:02] kgdboe: Single-core mode enabled. Shutting down all cores except #0. This is slower, but safer.
-[  +0.000006] kgdboe: you can try using multi-core mode by specifying thefollowing argument:
-[  +0.000004]   insmod kgdboe.ko force_single_core = 0
-[  +0.025812] smpboot: CPU 1 is now offline
-[  +0.029934] smpboot: CPU 2 is now offline
-[  +0.030956] smpboot: CPU 3 is now offline
-[  +0.026859] smpboot: CPU 4 is now offline
-[  +0.025216] smpboot: CPU 5 is now offline
-[  +0.032009] smpboot: CPU 6 is now offline
-[  +0.025847] smpboot: CPU 7 is now offline
-[  +0.006129] kgdboe: capturing network traffic on eth0 ...
-[  +0.000021] kgdb: Registered I/O driver kgdboe
-[  +0.000005] kgdboe: successfully initialized. Use the following gdb command to attach:
-[  +0.000003]   target remote udp:192.168.1.57:31337
+[zo aug 18 18:17:32 2024] kgdboe: loading out-of-tree module taints kernel.
+[zo aug 18 18:17:32 2024] netpoll: kgdboe: local IP 192.168.1.57
+[zo aug 18 18:17:32 2024] kgdboe: single-core mode enabled. Shutting down all cores except #0. This is slower, but safer.
+[zo aug 18 18:17:32 2024] smpboot: CPU 1 is now offline
+...
+[zo aug 18 18:17:32 2024] smpboot: CPU 7 is now offline
+[zo aug 18 18:17:32 2024] KGDB: Registered I/O driver kgdboe
+[zo aug 18 18:17:32 2024] kgdboe: Successfully initialized. Use the following gdb command to attach:
+[zo aug 18 18:17:32 2024] 	target remote udp:192.168.1.57:31337
 ```
 
-### Why It Was a Dead End
-When I started `gdb ./vmlinux` on the other machine and connected over UDP:
+However, as soon as I started `gdb ./vmlinux` on the second machine and attached over UDP:
 
 ```text
 (gdb) target remote udp:192.168.1.57:31337
@@ -183,7 +187,30 @@ Some events may be lost, rendering further debugging impossible.
 Malformed response to offset query, QCfffffffe
 ```
 
-As soon as GDB connected over UDP port `31337`, it returned `Malformed response to offset query, QCfffffffe` and **the remote kernel on the T430 hung completely** (*"En dan hangt de remote kernel"*). That made `kgdboe` a dead end on `6.10.x`, so I went back to `nvkm_error()` / `nvkm_warn()` logging and object disassembly.
+GDB immediately failed with `Malformed response to offset query, QCfffffffe` and **the target kernel on the T430 hung completely** (*"En dan hangt de remote kernel"*). That made `kgdboe` a dead end in August 2024, so I went back to `nvkm_error()` / `nvkm_warn()` logging and `gdb nv50.o` / `objdump` disassembly.
+
+### 3.3 Why It Hung in 2024 & Current Status of `kgdboe` (2025–2026 Update)
+Nearly a year after I opened **[`sysprogs/kgdboe` Issue #21](https://github.com/sysprogs/kgdboe/issues/21)**, upstream merged **[PR #23](https://github.com/sysprogs/kgdboe/pull/23)** and commit **[`d4b4f22`](https://github.com/sysprogs/kgdboe/commit/d4b4f22)** (*"Added support for Linux 6.9.0+ / Linux 6.14"*, Aug 2025), which revealed one of the key reasons why 6.9+ kernels failed after compiling:
+1. **`gro_normal_batch` Moved into `struct net_hotdata` in Linux 6.9+:**
+   In kernels `< 6.9`, `kgdboe_io_init()` looked up the standalone symbol `kallsyms_lookup_name("gro_normal_batch")` and set it to `1` so the Linux networking stack would not batch incoming UDP packets via Generic Receive Offload (GRO). In Linux 6.9+, `gro_normal_batch` was moved inside `struct net_hotdata net_hotdata` (`<net/hotdata.h>`). Because `kallsyms_lookup_name("gro_normal_batch")` returned `0` (`NULL`) on 6.9+, GRO packet batching remained active during the GDB UDP handshake:
+   ```c
+   // Fixed in sysprogs/kgdboe commit 68a4620 / d4b4f22 (Aug 2025):
+   #if LINUX_VERSION_CODE < KERNEL_VERSION(6,9,0)
+       int *_gro_normal_batch = kallsyms_lookup_name("gro_normal_batch");
+       if (_gro_normal_batch)
+           *_gro_normal_batch = 1;
+   #else
+       struct net_hotdata *_net_hotdata = (struct net_hotdata *)kallsyms_lookup_name("net_hotdata");
+       if (_net_hotdata)
+           _net_hotdata->gro_normal_batch = 1;
+   #endif
+   ```
+2. **Remaining Limitations of `kgdboe` Today:**
+   Even with the August 2025 fixes in [`sysprogs/kgdboe`](https://github.com/sysprogs/kgdboe), live GDB debugging over Ethernet (`netpoll`) on physical hardware remains fragile when regular network traffic is present on the same NIC (as noted by other contributors in [Issue #21](https://github.com/sysprogs/kgdboe/issues/21), `netpoll` ring-buffer sharing with the active NIC driver can still corrupt the GDB stub state and lock the target).
+   - **What works reliably on bare metal today:**
+     - **SSH + `dmesg -T`** (when only the display workqueue crashes, as in this Nouveau bug).
+     - **`netconsole`** (`modprobe netconsole netconsole=@/,@192.168.1.58/`) to stream kernel `printk` / oops messages over UDP in real time even when a crash panics the whole kernel.
+     - **`kdump` / `crash`** to capture a post-mortem `vmcore` across a warm kexec reboot, or **`objdump` / `gdb` on `.o` module files** (`Step 2.4` above) once you have the `RIP:` line.
 
 ---
 
