@@ -45,6 +45,9 @@ Inside the extracted kernel source tree (e.g. `~/kernel/linux-7.1.3`), start fro
 cp /boot/config-$(uname -r) .config
 
 # 2. Clear canonical/distro signing keys so local .deb packaging succeeds
+# Note: if MODULE_SIG re-enables itself during oldconfig, also disable SECURITY_LOCKDOWN_LSM,
+# which otherwise forces MODULE_SIG=y on some Ubuntu configs:
+./scripts/config --file .config --disable SECURITY_LOCKDOWN_LSM
 ./scripts/config --file .config --disable MODULE_SIG
 ./scripts/config --file .config --set-str SYSTEM_TRUSTED_KEYS ""
 ./scripts/config --file .config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
@@ -89,7 +92,7 @@ No symbol "nv50_disp_super_2_2" in current context.
 **Why this fails:** When `dmesg` shows `[nouveau]` at the end of `RIP: 0010:nv50_disp_super_2_2_dp+0xa7/0x320 [nouveau]`, that function lives in the loadable kernel module (`CONFIG_DRM_NOUVEAU=m` → `nouveau.ko`), **not** in the core `vmlinux` binary.
 *(Note: If GDB also complains that `scripts/gdb/vmlinux-gdb.py` auto-loading was declined, add `add-auto-load-safe-path /home/arjan/kernel/linux/scripts/gdb/vmlinux-gdb.py` to `~/.config/gdb/gdbinit`).*
 
-### Step 2.4: Three Ways to Map `func+0xoffset` to the Exact C Source Line
+### Step 2.4: Four Ways to Map `func+0xoffset` to the Exact C Source Line
 
 #### Method A: `gdb` Directly on the Module Object (`nv50.o` or `nouveau.ko`)
 Point `gdb` at the compiled object file (`drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.o`) in your build tree (or the unstripped `nouveau.ko` from the `-dbg` package):
@@ -124,16 +127,49 @@ cd ~/kernel/linux-6.9.9/drivers/gpu/drm/nouveau/nvkm/engine/disp
 objdump -SdCg nv50.o | less
 # Or with relocations and explicit line numbers (per kernel.org bug-hunting guide):
 objdump -r -S -l --disassemble nv50.o | less
+# Or dump a full disassembled file to search by symbol + hex offset:
+objdump -dS nv50.o > /tmp/nv50.s
 ```
 
-#### Method C: Using the Kernel's `scripts/faddr2line` Utility
-From the root of the kernel build tree, you can also run `scripts/faddr2line` against `nouveau.o` / `nouveau.ko` or `nv50.o`:
+#### Method C: `addr2line` and the Kernel's `scripts/faddr2line` Utility
+Once you know the hex offset inside the object file (e.g. `0x3f84` from `gdb` or `nm` + offset), or directly using `scripts/faddr2line` with `symbol+0xoffset`:
 
 ```bash
+# Using the kernel's helper script directly with function+offset:
 ./scripts/faddr2line drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.o nv50_disp_super_2_2_dp+0xa7
+
+# Or using binutils addr2line with the hex address inside the debug object:
+addr2line -f -i -e drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.o 0x3f84
 ```
 
 Looking at `nv50_disp_super_2_2_dp()` in `nv50.c` immediately showed three divisions by `ior->dp.nr` (`12 / ior->dp.nr`, `36 / ior->dp.nr`, and `(khz * head->asy.or.depth / 8) / ior->dp.nr`) with no check that `ior->dp.nr` is non-zero.
+
+### Step 2.5: When You Also Need `kdump` & `crash` (Full Kernel Panics vs. Workqueue Oopses)
+In this Nouveau DisplayPort bug, the division by zero was a kernel **Oops** inside the `nvkm-disp` kworker thread rather than a full system `panic()`. Because networking and SSH stayed alive, capturing `dmesg -T` over SSH and feeding `RIP: nv50_disp_super_2_2+0x284` into `gdb nv50.o` and `objdump -SdCg nv50.o` was enough—no `vmcore` crash dump was needed.
+
+However, if a kernel bug **panics the entire machine** (or you want to inspect live/post-mortem kernel structs with the [`crash`](https://crash-utility.github.io/) utility using the `-dbg` package built in Step 2.2), here is the standard Ubuntu/Debian workflow:
+
+```bash
+# 1. Install kdump-tools and the crash analyzer (reserves crashkernel= memory in GRUB)
+sudo apt install linux-crashdump kdump-tools crash
+sudo kdump-config show
+
+# 2. Optional: also trigger a kdump vmcore on a non-fatal kernel Oops (like divide error)
+sudo sysctl -w kernel.panic_on_oops=1
+
+# 3. After a crash reboots into the kdump capture kernel and writes /var/crash/<timestamp>/dump.<timestamp>,
+#    open it with crash and your unstripped vmlinux from the -dbg package:
+sudo crash /usr/lib/debug/vmlinux-$(uname -r) /var/crash/<timestamp>/dump.<timestamp>
+```
+
+Inside the `crash>` prompt, load module debug symbols for `nouveau` and inspect the backtrace and instruction disassembly:
+
+```text
+crash> mod -s nouveau /usr/lib/debug/lib/modules/<ver>-custom/kernel/drivers/gpu/drm/nouveau/nouveau.ko
+crash> log          # print the kernel message buffer (dmesg) from the crash dump
+crash> bt           # show stack backtrace of the panicking task
+crash> dis -l nv50_disp_super_2_2_dp+0xa7
+```
 
 ---
 
