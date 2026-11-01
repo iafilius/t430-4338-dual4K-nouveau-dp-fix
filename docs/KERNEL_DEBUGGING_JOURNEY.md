@@ -6,13 +6,25 @@ This document covers the July–September 2024 debugging sessions on my ThinkPad
 
 ## 1. Capturing the Crash via SSH & Kernel Boot Debug Parameters
 
-### Why You Need SSH from a Second Machine
-When this crash happens, **all screens stay black or frozen and the local keyboard stops responding completely** (even `Ctrl+Alt+F2` to switch to a virtual console does nothing). Sitting in front of the laptop, it looks like a total hardware lockup.
+### Why You Need SSH from a Second Machine (and the Hybrid `i915` vs. `nouveau` Symptom Split)
+Because the ThinkPad T430 is a hybrid Optimus laptop where the **Intel HD 4000 (`i915`)** drives the internal WQHD panel (`LVDS-1`) and the **NVIDIA NVS 5400M (`nouveau`)** drives the docked DisplayPort monitors (`DP-2`, `DP-3`), the crash produces a distinctive set of symptoms ([GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377), [MR !25](https://gitlab.freedesktop.org/drm/nouveau/-/merge_requests/25), [MR !27](https://gitlab.freedesktop.org/drm/nouveau/-/merge_requests/27)):
+- **External 4K Monitors (`nouveau`): Always Stay Black.** Once `nv50_disp_super_2_2_dp()` crashes on wake-up, the external DisplayPort monitors never come back on (*"monitor no longer there after display wakeup"*).
+- **Internal Laptop Screen (`i915`): Sometimes Keeps Working, Sometimes Freezes/Stays Black.** In some cases, the internal laptop screen wakes up and keeps working on the Intel `i915` driver; in other cases (when GNOME Mutter / GDM3 blocks on the wedged `nouveau` DRM device), **all screens stay black or frozen and the local keyboard stops responding completely** (even `Ctrl+Alt+F2` to switch to a virtual console does nothing).
+- **Runaway System Load (`1 → 50+` via `gpu-manager`) & Hanging Reboot:**
+  - Only the `nvkm-disp` display workqueue has crashed (`DRM: core notifier timeout` / `base-1: timeout`), leaving that kworker stuck in uninterruptible sleep (`D` state) and raising the baseline load average to `1.0`.
+  - Every time `gpu-manager`, `udev`, or a display query runs and touches the wedged NVIDIA DRM device, another process blocks in `D` state (`load = load + 1`), stair-stepping the system load up to **`50+`** even with near-zero actual CPU usage.
+  - Running `sudo reboot` (or rebooting from the desktop) **always hangs indefinitely** waiting for the wedged `nouveau` display subsystem to shut down, forcing a manual hard power-button reset.
+- Logging in via **SSH from a second computer** (`ssh arjan@192.168.1.57`) works even when the local display and keyboard are completely frozen, making it possible to inspect `sudo dmesg -T` live at the moment of the crash and run `sync` before holding down the power button (avoiding dirty root filesystem `fsck` runs on the next boot).
 
-However, logging in via **SSH from a second computer** (`ssh arjan@192.168.1.57`) revealed that the Linux kernel, networking, and user space were still running in the background:
-- Only the `nvkm-disp` display workqueue had crashed and locked up the display pipeline (`DRM: core notifier timeout` / `base-0: timeout`).
-- Because the crashed kernel worker was stuck in D-state/uninterruptible wait, `uptime` showed the system load climbing above `1.0`, and running `sudo reboot` over SSH hung indefinitely waiting for the display subsystem to shut down.
-- Having an active SSH session made it possible to inspect `sudo dmesg -T` live at the moment of the crash and run `sync` before holding down the power button (avoiding dirty root filesystem `fsck` runs on the next boot).
+### Three Reproducer Paths (Including the Fast 30-Second `Win+L` Reproducer)
+1. **Fast 30-Second Reproducer ([GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377)):**
+   - In a Wayland + GDM3/GNOME session, lock the laptop (`Win+L` / `Super+L`) and let it turn off both the internal and external displays (takes a few seconds).
+   - Switch the external monitors to another input and let them enter power-save mode.
+   - Wake the T430 → `nouveau` immediately crashes in `nv50_disp_super_2_2_dp()`.
+2. **Daily "End-of-Workday" Shared-Monitor Scenario:**
+   - Switch the external monitors to the 2nd laptop (HDMI), let the 2nd laptop go to sleep so the monitors enter power-saving standby, and then wake or switch back to the T430.
+3. **Rebooting While External Monitors Are Switched Away:**
+   - Switch the external monitors to the 2nd laptop, reboot the T430 while they are switched away, and switch the monitor inputs back to the T430.
 
 ### Kernel Boot Debug Flags (`/etc/default/grub`)
 To capture full DRM and Nouveau trace logs over SSH leading up to the freeze, I configured `/etc/default/grub` with extra debug flags:
@@ -25,11 +37,73 @@ GRUB_CMDLINE_LINUX_DEFAULT="loglevel=6 nouveau.debug=info drm.debug=2 log_buf_le
 # intel_iommu=off iommu=pt
 ```
 
-Whenever the external Iiyama 4K DisplayPort monitors went into standby, `dmesg` logged a division error (`divide error: 0000 [#1] PREEMPT SMP PTI` / `Oops: divide error`):
+### Verbatim July 23, 2024 `divide error: 0000` Oops & Reading the Bug Directly from the CPU Registers
+Whenever the external Iiyama 4K DisplayPort monitors went into standby and the T430 woke up, `dmesg -T` logged a kernel `divide error: 0000 [#1] PREEMPT SMP PTI` oops:
 - On builds where `nv50_disp_super_2_2_dp` was not inlined (`6.9.9` / `7.1.3`):
-  `RIP: 0010:nv50_disp_super_2_2_dp+0xa7/0x320 [nouveau]`
+  `RIP: 0010:nv50_disp_super_2_2_dp+0xa6/0x320 [nouveau]` (or `+0xa7/0x320`)
 - On builds where the compiler inlined `static void nv50_disp_super_2_2_dp` into `nv50_disp_super_2_2`:
   `RIP: 0010:nv50_disp_super_2_2+0x284/0x430 [nouveau]`
+
+Here is the complete verbatim oops captured on **July 23, 2024** (`6.9.9-060909-generic`, posted to [GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377)):
+
+```text
+[Tue Jul 23 18:36:32 2024] nouveau 0000:01:00.0: DRM: DDC responded, but no EDID for DP-2
+[Tue Jul 23 18:36:32 2024] nouveau 0000:01:00.0: DRM: DDC responded, but no EDID for DP-3
+[Tue Jul 23 18:36:33 2024] nouveau 0000:01:00.0: DRM: DDC responded, but no EDID for DP-3
+[Tue Jul 23 18:36:33 2024] divide error: 0000 [#1] PREEMPT SMP PTI
+[Tue Jul 23 18:36:33 2024] CPU: 1 PID: 70 Comm: kworker/u32:2 Not tainted 6.9.9-060909-generic #202407111135
+[Tue Jul 23 18:36:33 2024] Hardware name: LENOVO 2349G7G/2349G7G, BIOS G1ETC2WW (2.82 ) 08/07/2019
+[Tue Jul 23 18:36:33 2024] Workqueue: nvkm-disp nv50_disp_super [nouveau]
+[Tue Jul 23 18:36:33 2024] RIP: 0010:nv50_disp_super_2_2_dp+0xa6/0x320 [nouveau]
+[Tue Jul 23 18:36:33 2024] Code: 44 24 4e 41 0f b7 54 24 4c 41 83 e0 01 4c 89 ef 83 e8 19 29 d0 31 d2 48 98 49 0f af c6 48 f7 f1 31 d2 48 89 c1 b8 24 00 00 00 <f7> fe 31 d2 43 8d 34 40 48 63 f6 29 c1 b8 0c 00 00 00 41 f7 f9 83
+[Tue Jul 23 18:36:33 2024] RSP: 0018:ffffa62d402cbd70 EFLAGS: 00010246
+[Tue Jul 23 18:36:33 2024] RAX: 0000000000000024 RBX: 00000000000001f6 RCX: 0000000000000794
+[Tue Jul 23 18:36:33 2024] RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffff9533951d5100
+[Tue Jul 23 18:36:33 2024] RBP: ffffa62d402cbdc8 R08: 0000000000000001 R09: 0000000000000000
+[Tue Jul 23 18:36:33 2024] R10: 0000000000000000 R11: 0000000000000000 R12: ffff9533802d9600
+[Tue Jul 23 18:36:33 2024] R13: ffff9533951d5100 R14: 0000000000041eb0 R15: 0000000000048828
+[Tue Jul 23 18:36:33 2024] Call Trace:
+[Tue Jul 23 18:36:33 2024]  <TASK>
+[Tue Jul 23 18:36:33 2024]  ? show_regs+0x6c/0x80
+[Tue Jul 23 18:36:33 2024]  ? die+0x37/0xa0
+[Tue Jul 23 18:36:33 2024]  ? do_trap+0xda/0xf0
+[Tue Jul 23 18:36:33 2024]  ? do_error_trap+0x71/0xb0
+[Tue Jul 23 18:36:33 2024]  ? nv50_disp_super_2_2_dp+0xa6/0x320 [nouveau]
+[Tue Jul 23 18:36:33 2024]  ? exc_divide_error+0x3a/0x70
+[Tue Jul 23 18:36:33 2024]  ? nv50_disp_super_2_2_dp+0xa6/0x320 [nouveau]
+[Tue Jul 23 18:36:33 2024]  ? asm_exc_divide_error+0x1b/0x20
+[Tue Jul 23 18:36:33 2024]  ? nv50_disp_super_2_2_dp+0xa6/0x320 [nouveau]
+[Tue Jul 23 18:36:33 2024]  nv50_disp_super_2_2+0xf2/0x160 [nouveau]
+[Tue Jul 23 18:36:33 2024]  nv50_disp_super+0x139/0x280 [nouveau]
+[Tue Jul 23 18:36:33 2024]  process_one_work+0x182/0x3d0
+[Tue Jul 23 18:36:33 2024]  worker_thread+0x304/0x440
+[Tue Jul 23 18:36:33 2024]  kthread+0xe4/0x110
+[Tue Jul 23 18:36:33 2024]  ret_from_fork+0x47/0x70
+[Tue Jul 23 18:36:33 2024]  ret_from_fork_asm+0x1a/0x30
+[Tue Jul 23 18:36:33 2024]  </TASK>
+[Tue Jul 23 18:36:33 2024] ---[ end trace 0000000000000000 ]---
+[Tue Jul 23 18:36:35 2024] nouveau 0000:01:00.0: DRM: core notifier timeout
+[Tue Jul 23 18:36:37 2024] nouveau 0000:01:00.0: DRM: base-1: timeout
+[Tue Jul 23 18:36:39 2024] nouveau 0000:01:00.0: DRM: base-1: timeout
+```
+
+**How to read the exact C bug out of the `Code:` and `RAX`/`RSI` registers (even before loading debug symbols):**
+1. In the `Code:` line, the trapping instruction is marked with angle brackets: **`<f7> fe`**, preceded by `31 d2` and `b8 24 00 00 00`:
+   - `31 d2` → `xor %edx, %edx` (`RDX = 0`)
+   - `b8 24 00 00 00` → `mov $0x24, %eax` (`0x24` hex = **`36` in decimal**, seen in `RAX: 0000000000000024`)
+   - `<f7> fe` → `idiv %esi` (signed divide `EDX:EAX` by `ESI`)
+2. Look at the divisor register `RSI` (and `R09`):
+   - `RSI: 0000000000000000` (`0`!)
+   - `R09: 0000000000000000` (`0`!)
+3. Look four instructions after `<f7> fe`:
+   - `b8 0c 00 00 00` → `mov $0x0c, %eax` (`0x0c` hex = **`12` in decimal**)
+   - `41 f7 f9` → `idiv %r9d`
+4. Compare those two constants (`36` and `12`) against `nv50_disp_super_2_2_dp()` in `drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c`:
+   ```c
+   h = h - (3 * ior->dp.ef) - (12 / ior->dp.nr);   // 0x0c (12) / ior->dp.nr
+   v = v - ((36 / ior->dp.nr) + 3) - 1;            // 0x24 (36) / ior->dp.nr  <-- traps here (<f7> fe)!
+   ```
+   The CPU trapped on `<f7> fe` while dividing `RAX = 0x24` (`36`) by `RSI = 0` (`ior->dp.nr == 0`).
 
 ---
 

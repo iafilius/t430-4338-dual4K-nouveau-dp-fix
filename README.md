@@ -25,9 +25,17 @@ Dropping the proprietary driver was an easy decision once the open-source **`nou
 
 **Does it work? Yes, out of the box—but it is only reliable with a small one-liner kernel patch (`if (ior->dp.nr == 0) return;`).**
 
-Without that check, switching the two 4K monitors over to my second laptop (on HDMI), letting the monitors go into power-saving standby when that laptop falls asleep, and then switching them back (or waking them up) triggers a **kernel division-by-zero oops** on the T430. During that transition (`DRM: DDC responded, but no EDID for DP-2 / DP-3`), the T430 is not properly informed or polled about the actual DisplayPort link state: `nouveau` assumes the monitor output is active and runs `nv50_disp_super_2_2_dp()` while the active DisplayPort lane count is still `0` (`ior->dp.nr == 0`). Even though this is a corner case—and whether the underlying state quirk is in the monitor firmware, the dock, or kernel polling—**the Linux kernel must never crash on it.** Without the patch, the desktop freezes, system load climbs above `1.0`, `reboot` hangs, and the laptop needs a hard power reset.
+Without that check, switching the two 4K monitors over to my second laptop (on HDMI), letting the monitors go into power-saving standby when that laptop falls asleep, and then switching them back (or waking them up) triggers a **kernel division-by-zero oops** on the T430. During that transition (`DRM: DDC responded, but no EDID for DP-2 / DP-3`), the T430 is not properly informed or polled about the actual DisplayPort link state: `nouveau` assumes the monitor output is active and runs `nv50_disp_super_2_2_dp()` while the active DisplayPort lane count is still `0` (`ior->dp.nr == 0`). Even though this is a corner case—and whether the underlying state quirk is in the monitor firmware, the dock, or kernel polling—**the Linux kernel must never crash on it.**
 
-I first tracked down and patched this bug in **July 2024** ([GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377)). After hitting the exact same freeze again on a clean mainline **`7.1.3`** kernel in **July 2026**, I put together this repository so I don't have to dig up my notes every time—and to help kernel maintainers as well as other ThinkPad T430 / NVIDIA users struggling with unexplained DisplayPort black-screen freezes. Because you can only see the `nv50_disp_super_2_2_dp` kernel oops if you log in via SSH from a second machine after the screens go dark, this `ior->dp.nr == 0` condition (or similar DisplayPort link-state mismatches) is **[possibly related to a number of other NVIDIA/Nouveau DisplayPort black-screen, input-switching, and wake-from-sleep freezes reported across bug trackers and forums](docs/HARDWARE_AND_DRIVER_HISTORY.md#5-possibly-related-nvidianouveau-displayport-black-screen--wake-up-reports)**.
+### What You Actually See (Symptoms on a Hybrid `i915` + `nouveau` Laptop)
+
+Because this is a hybrid Optimus laptop where the **Intel HD 4000 (`i915`)** drives the internal laptop screen (`LVDS-1`) and the **NVIDIA NVS 5400M (`nouveau`)** drives the docked DisplayPort monitors (`DP-2`, `DP-3`), the crash shows up as a split set of symptoms:
+- **External DisplayPort Monitors (`nouveau`): Always Stay Black.** Once the crash hits on wake-up, both external 4K monitors stay completely black (*"monitor no longer there after display wakeup"*).
+- **Internal Laptop Screen (`i915`): Sometimes Keeps Working, Sometimes Freezes/Stays Black.** Depending on whether the Wayland compositor (GNOME Mutter / GDM3) blocks waiting on the wedged `nouveau` DRM device (`card2`), the internal Intel screen sometimes wakes up and keeps working—and other times stays black or frozen with an unresponsive local keyboard.
+- **Runaway System Load (`1 → 50+` via `gpu-manager`):** The crashed `nvkm-disp` kworker hangs in uninterruptible sleep (`D` state), setting the baseline load average to `1.0`. Every time `gpu-manager`, `udev`, or a display query runs and touches the wedged NVIDIA DRM node, another process hangs in `D` state (`load = load + 1`), stair-stepping the system load to **`50+`** even at near-zero CPU usage.
+- **Normal `reboot` Always Hangs:** Attempting a normal shutdown or `sudo reboot` hangs indefinitely waiting on the wedged `nouveau` display workqueue, forcing a manual hard power-button reset (and an `fsck` on the next boot).
+
+I first tracked down and patched this bug in **July 2024** ([GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377)). After running a patched `6.16.5` kernel for **226 days of continuous uptime** and then hitting the exact same freeze again within 24 hours on a clean mainline **`7.1.3`** kernel in **July 2026**, I put together this repository so I don't have to dig up my notes every time—and to help kernel maintainers as well as other ThinkPad T430 / NVIDIA users struggling with unexplained DisplayPort black-screen freezes. Because you often need to log in via SSH from a second machine to see the `nv50_disp_super_2_2_dp` kernel oops in `dmesg`, this `ior->dp.nr == 0` condition (or similar DisplayPort link-state mismatches) is **[possibly related to a number of other NVIDIA/Nouveau DisplayPort black-screen, input-switching, and wake-from-sleep freezes reported across bug trackers and forums](docs/HARDWARE_AND_DRIVER_HISTORY.md#5-possibly-related-nvidianouveau-displayport-black-screen--wake-up-reports)**.
 
 ### Quick Navigation by Audience
 
@@ -56,11 +64,12 @@ I first tracked down and patched this bug in **July 2024** ([GitLab Issue #377](
 
 ![The End-of-Workday Crash State Machine](assets/crash-state-machine.svg)
 
-### How the Crash Happens
-1. **Switch inputs to the 2nd laptop:** Both 32" Iiyama 4K monitors are switched to their **HDMI** inputs (displaying the MacBook Pro) while the T430 stays docked on **DisplayPort** (`DP-2` and `DP-3`).
-2. **Monitors enter power-saving standby:** At the end of the workday, the MacBook Pro goes to sleep. With no active signal on HDMI, both monitors enter **power-saving standby**, and the DisplayPort lane count drops to `0` (`ior->dp.nr == 0`).
-3. **Switch back / wake up with stale link state:** When the monitors wake up or are switched back to the T430, the T430 is not properly informed or polled for the actual link situation (`DRM: DDC responded, but no EDID for DP-2 / DP-3`). The display engine assumes the monitor is still/again there and triggers the `nv50_disp_super` modeset supervisor before DisplayPort link training has established active lanes (`ior->dp.nr == 0`).
-4. **Unchecked division by zero in `nv50.c`:** Whether this desynchronized state is a quirk in the monitor firmware or in `nouveau`'s hot-plug/polling logic, the kernel must not crash on it. Inside `drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c`, `nv50_disp_super_2_2_dp()` divides directly by `ior->dp.nr` in three places without checking for zero:
+### Three Ways to Trigger / Reproduce the Bug
+1. **Fast 30-Second Reproducer ([GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377)):** In a Wayland + GDM3/GNOME session, lock the laptop (`Win+L` / `Super+L`) and wait a few seconds for it to turn off the internal and external displays. Switch the external monitors to another input and let them enter power-save mode, then wake the T430.
+2. **Daily "End-of-Workday" Standby Scenario:** Switch both 32" Iiyama 4K monitors to their **HDMI** inputs (displaying the MacBook Pro) while the T430 stays docked on **DisplayPort** (`DP-2` and `DP-3`). When the MacBook Pro sleeps at the end of the workday, both monitors enter **power-saving standby** (`ior->dp.nr == 0`). Waking or switching back to the T430 triggers `nv50_disp_super` while `ior->dp.nr == 0`.
+3. **Rebooting While Monitors Are Switched Away:** Switch the external monitors to the second laptop, reboot the T430 while they are switched away, and switch the monitors back to the T430.
+
+In all three cases, the T430 is not properly informed or polled for the actual link state (`DRM: DDC responded, but no EDID for DP-2 / DP-3`). `nouveau` assumes the monitor is still/again active and calls `nv50_disp_super_2_2_dp()` before DisplayPort link training has established active lanes (`ior->dp.nr == 0`). Inside `drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c`, `nv50_disp_super_2_2_dp()` divides directly by `ior->dp.nr` in three places without checking for zero:
 
 ```c
 // drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c (lines 1179–1190)
@@ -73,22 +82,31 @@ link_data_rate = (khz * head->asy.or.depth / 8) / ior->dp.nr;   // <-- divide by
 
 > [!TIP]
 > **Debugging Tip — Use SSH from a Second Machine When Screen & Keyboard Are Dead:**
-> When this bug hits, the screens stay black/frozen and the local keyboard no longer responds (switching to a text console via `Ctrl+Alt+F2` does not work either), making the laptop look completely dead. However, the Linux network stack and `sshd` stay alive! By logging in via **SSH from a second laptop**, you can run `sudo dmesg -T` live to catch the `nv50_disp_super_2_2_dp` divide error, see the stuck `kworker` driving the system load above `1.0`, and flush disks with `sync` before power-cycling (since `sudo reboot` also hangs waiting on the dead `nvkm-disp` workqueue).
+> When this bug hits, the external screens stay black and—if the compositor blocks on the wedged `nouveau` DRM device—the internal screen and local keyboard also stop responding (even `Ctrl+Alt+F2` does not switch to a text console). However, the Linux network stack and `sshd` stay alive! By logging in via **SSH from a second laptop**, you can run `sudo dmesg -T` live to catch the `nv50_disp_super_2_2_dp` divide error, see the stuck `kworker` and `gpu-manager` processes driving the system load from `1.0` up to `50+`, and flush disks with `sync` before power-cycling (since `sudo reboot` also hangs waiting on the dead `nvkm-disp` workqueue).
 
 ```text
-[di jul 23 10:28:25 2024] nouveau 0000:01:00.0: DRM: DDC responded, but no EDID for DP-2
-[di jul 23 10:28:25 2024] nouveau 0000:01:00.0: DRM: DDC responded, but no EDID for DP-3
-[di jul 23 10:28:26 2024] Workqueue: nvkm-disp nv50_disp_super [nouveau]
-[di jul 23 10:28:26 2024] RIP: 0010:nv50_disp_super_2_2_dp+0xa7/0x320 [nouveau]
-[di jul 23 10:28:26 2024]  ? nv50_disp_super_2_2_dp+0xa7/0x320 [nouveau]
-[di jul 23 10:28:26 2024]  nv50_disp_super_2_2+0xf2/0x160 [nouveau]
-[di jul 23 10:28:26 2024]  nv50_disp_super+0x139/0x280 [nouveau]
+[Tue Jul 23 18:36:32 2024] nouveau 0000:01:00.0: DRM: DDC responded, but no EDID for DP-2
+[Tue Jul 23 18:36:32 2024] nouveau 0000:01:00.0: DRM: DDC responded, but no EDID for DP-3
+[Tue Jul 23 18:36:33 2024] divide error: 0000 [#1] PREEMPT SMP PTI
+[Tue Jul 23 18:36:33 2024] CPU: 1 PID: 70 Comm: kworker/u32:2 Not tainted 6.9.9-060909-generic #202407111135
+[Tue Jul 23 18:36:33 2024] Hardware name: LENOVO 2349G7G/2349G7G, BIOS G1ETC2WW (2.82 ) 08/07/2019
+[Tue Jul 23 18:36:33 2024] Workqueue: nvkm-disp nv50_disp_super [nouveau]
+[Tue Jul 23 18:36:33 2024] RIP: 0010:nv50_disp_super_2_2_dp+0xa6/0x320 [nouveau]
+[Tue Jul 23 18:36:33 2024] Code: 44 24 4e 41 0f b7 54 24 4c 41 83 e0 01 4c 89 ef 83 e8 19 29 d0 31 d2 48 98 49 0f af c6 48 f7 f1 31 d2 48 89 c1 b8 24 00 00 00 <f7> fe 31 d2 43 8d 34 40 48 63 f6 29 c1 b8 0c 00 00 00 41 f7 f9 83
+[Tue Jul 23 18:36:33 2024] RAX: 0000000000000024 RBX: 00000000000001f6 RCX: 0000000000000794
+[Tue Jul 23 18:36:33 2024] RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffff9533951d5100
+[Tue Jul 23 18:36:33 2024] Call Trace:
+[Tue Jul 23 18:36:33 2024]  <TASK>
+[Tue Jul 23 18:36:33 2024]  ? exc_divide_error+0x3a/0x70
+[Tue Jul 23 18:36:33 2024]  ? nv50_disp_super_2_2_dp+0xa6/0x320 [nouveau]
+[Tue Jul 23 18:36:33 2024]  nv50_disp_super_2_2+0xf2/0x160 [nouveau]
+[Tue Jul 23 18:36:33 2024]  nv50_disp_super+0x139/0x280 [nouveau]
 ...
-[di jul 23 10:28:28 2024] nouveau 0000:01:00.0: DRM: core notifier timeout
-[di jul 23 10:28:31 2024] nouveau 0000:01:00.0: DRM: base-0: timeout
+[Tue Jul 23 18:36:35 2024] nouveau 0000:01:00.0: DRM: core notifier timeout
+[Tue Jul 23 18:36:37 2024] nouveau 0000:01:00.0: DRM: base-1: timeout
 ```
 
-*(For the full story of how I caught this over SSH, pinpointed the exact source line in 2024 using `gdb nv50.o` and `objdump`, and why remote kernel debugging over Ethernet with `kgdboe` hung the target kernel, see **[`docs/KERNEL_DEBUGGING_JOURNEY.md`](docs/KERNEL_DEBUGGING_JOURNEY.md)**).*
+*(Notice how you can read the bug right out of the register dump: `b8 24 00 00 00` loads `0x24` = **`36`** into `RAX`, and `<f7> fe` (`idiv %esi`) divides `RAX=36` by `RSI: 0000000000000000` (`ior->dp.nr == 0`)—which is literally `36 / ior->dp.nr`! For the full story of how I decoded this in 2024 using `gdb nv50.o` and `objdump`, and why remote kernel debugging over Ethernet with `kgdboe` hung the target kernel, see **[`docs/KERNEL_DEBUGGING_JOURNEY.md`](docs/KERNEL_DEBUGGING_JOURNEY.md)**).*
 
 ---
 
@@ -159,7 +177,8 @@ Full details and LKML correspondence are in **[`docs/KERNEL_TEST_MATRIX.md`](doc
 | :--- | :--- | :--- | :--- | :--- |
 | **July 2024** | Ubuntu `6.8.0-x-generic` | 💥 Freeze on monitor standby | ✅ Stable | [GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377) |
 | **July 2024** | Mainline `6.9.9` | 💥 Divide-by-zero in `nv50_disp_super_2_2_dp` | ✅ Stable | [GitLab MR !25](https://gitlab.freedesktop.org/drm/nouveau/-/merge_requests/25) |
-| **Aug 2024** | Mainline `6.10.y` | 💥 Crash present in vanilla tree | ✅ Stable (ran ~2 years) | [GitLab MR !27](https://gitlab.freedesktop.org/drm/nouveau/-/merge_requests/27) |
+| **Aug 2024** | Mainline `6.10.y` | 💥 Crash present in vanilla tree | ✅ Stable | [GitLab MR !27](https://gitlab.freedesktop.org/drm/nouveau/-/merge_requests/27) |
+| **2025–Jul 2026** | Mainline `6.16.5-custom` | 💥 Crash present in vanilla tree | ✅ **226 days continuous uptime** | Local long-term production run |
 | **July 2026** | Mainline `7.1.3` (Vanilla) | 💥 Froze within 24h + forced `fsck` | — | Still unfixed in vanilla 7.1.3 |
 | **July–Oct 2026** | Mainline `7.1.3-custom #2` | — | ✅ Stable (`dmesg` verified) | [LKML `[PATCH v2]` (`msg54492`)](https://www.mail-archive.com/nouveau@lists.freedesktop.org/msg54492.html) |
 
