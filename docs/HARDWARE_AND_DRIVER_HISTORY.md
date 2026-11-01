@@ -67,3 +67,4 @@ The `390.157` driver only supports **Xorg/X11** and has **no support for modern 
 Because keeping `nvidia-driver-390` alive was so much trouble, dropping it as soon as a working alternative existed was an easy call.
 
 When I tested the in-tree **`nouveau`** driver again in **2024**, the situation had changed completely. Because `nouveau` uses standard Linux DRM/KMS, **GBM**, and **DMA-BUF**, it worked out of the box with **Wayland** across the internal `i915` WQHD screen and both external `nouveau` 4K@30Hz DisplayPort monitors. The only remaining problem was the `nv50_disp_super_2_2_dp()` division-by-zero crash whenever the monitors went into standby—which the one-liner patch in this repository fixes.
+

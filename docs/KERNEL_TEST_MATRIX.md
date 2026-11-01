@@ -1,4 +1,4 @@
-# Historical Kernel Test Matrix & Upstream Timeline (2024–2026)
+# Linux Kernel Test Matrix & Upstream Timeline (2024–2026)
 
 This document lists the Linux kernel versions tested on my **Lenovo ThinkPad T430 (NVIDIA NVS 5400M / GF108M)** in the **Type 4338 Dock** with two **32" Iiyama ProLite XB3288UHSU (`PL3288UH`) 4K** monitors on DisplayPort (`DP-2` and `DP-3`).
 

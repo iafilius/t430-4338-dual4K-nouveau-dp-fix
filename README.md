@@ -1,4 +1,4 @@
-# Lenovo ThinkPad T430 + 4338 Dock + Dual 4K Nouveau DisplayPort Division-by-Zero Fix
+# Lenovo ThinkPad T430 + 4338 Dock + Dual 4K: Linux Kernel Nouveau DisplayPort Division-by-Zero Fix
 
 [![Linux Kernel](https://img.shields.io/badge/Linux_Kernel-6.8.x_%E2%86%92_7.1.3-007ec6?logo=linux&logoColor=white)](docs/KERNEL_TEST_MATRIX.md)
 [![Subsystem](https://img.shields.io/badge/Subsystem-drm%2Fnouveau%2Fdisp_(nv50.c)-76B900?logo=nvidia&logoColor=white)](patches/0001-drm-nouveau-disp-Prevent-divide-by-zero-after-screen-wake-up.patch)

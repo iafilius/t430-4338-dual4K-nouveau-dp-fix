@@ -1,4 +1,4 @@
-# The 2024 Kernel Debugging Journey: `gdb`, `objdump`, and the `kgdboe` Dead End
+# The 2024 Linux Kernel Debugging Journey: `gdb`, `objdump`, and the `kgdboe` Dead End
 
 This document covers the July–September 2024 debugging sessions on my ThinkPad T430 (`6.8.0-38-generic` → `6.9.9-custom` → `6.10.2-custom`) to track down the `nv50_disp_super_2_2_dp` division-by-zero crash: what worked (`objdump`, `gdb` on `nv50.o`, kernel boot debug flags), what turned into a dead end (`gdb vmlinux` missing module symbols, `kgdboe` hanging the target kernel over UDP, and testing a `nouveau_dp.c` AUX power change), and how the patch evolved.
 
