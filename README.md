@@ -17,9 +17,11 @@
 
 ## Overview & Motivation
 
-The **Lenovo ThinkPad T430** features a discrete **NVIDIA NVS 5400M (`GF108M` Fermi)** GPU wired directly to the digital display ports on the **Type 4338 Dock**. NVIDIA ended support for this chipset years ago (freezing the legacy proprietary driver at **`390.157`** / `nvidia-driver-390` in late 2022). Installing or updating the `nvidia-dkms-390` package on newer Linux kernels was never frictionless—and quite often dramatic, with DKMS build failures breaking kernel upgrades and leaving external displays dead. Dropping the proprietary driver as soon as an open-source alternative became viable was therefore an easy decision.
+The **Lenovo ThinkPad T430** features a discrete **NVIDIA NVS 5400M (`GF108M` Fermi)** GPU wired directly to the digital display ports on the **Type 4338 Dock**. NVIDIA ended support for this chipset years ago, freezing the legacy proprietary driver at **`390.157`** (`nvidia-driver-390`) in late 2022. That left the proprietary driver as a **double dead end**:
+1. **Incompatible with Newer Kernels:** Installing or updating `nvidia-dkms-390` on newer Linux kernels was never frictionless—and quite often dramatic, with DKMS build failures breaking upgrades and leaving external displays dead.
+2. **Locked to Legacy Xorg/X11 (No Wayland Support):** The `390.xx` driver only supported **Xorg/X11** and had **no support for Wayland at all**, blocking any transition to a modern Linux desktop stack.
 
-Fortunately, the in-tree open-source **`nouveau`** driver has matured significantly. Together with **Wayland** (replacing X11), it can drive the T430's internal **WQHD (`2560×1440`)** panel alongside **two external 32-inch 4K (`3840×2160`) monitors** (**10240 × 2160 total desktop canvas**) on modern mainline kernels (`6.8.x` through `7.1.3+`).
+Dropping the proprietary `390.xx` driver as soon as an open-source alternative became viable was therefore an easy decision. Fortunately, the in-tree open-source **`nouveau`** driver has matured significantly. Together with **Wayland** (replacing Xorg/X11), it can drive the T430's internal **WQHD (`2560×1440`)** panel alongside **two external 32-inch 4K (`3840×2160`) monitors** (**10240 × 2160 total desktop canvas**) on modern mainline kernels (`6.8.x` through `7.1.3+`).
 
 **Does it work? Yes—out of the box, though it only becomes 100% reliable with a small one-liner kernel patch (`if (ior->dp.nr == 0) return;`).**
 
