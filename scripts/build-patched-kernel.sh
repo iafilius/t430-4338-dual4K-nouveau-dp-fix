@@ -12,6 +12,29 @@
 # ==============================================================================
 set -euo pipefail
 
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    cat <<'EOF'
+Usage: ./build-patched-kernel.sh [KERNEL_VERSION] [silent|verbose]
+
+Downloads a mainline Linux kernel tarball, applies the Nouveau DisplayPort
+division-by-zero patch (nv50_disp_super_2_2_dp), configures Debian build flags
+(including DEBUG_INFO), and compiles installable .deb packages via bindeb-pkg.
+
+Arguments:
+  KERNEL_VERSION   Mainline kernel version to download & build (default: 7.1.3)
+  silent|verbose   Patch variant: 'verbose' (default, logs bypassed 0-lane events
+                   via nvkm_warn) or 'silent' (upstream [PATCH v2] early return)
+
+Environment Variables:
+  KERNEL_BUILD_DIR Build workspace directory (default: ~/kernel)
+
+Examples:
+  ./build-patched-kernel.sh 7.1.3 verbose
+  ./build-patched-kernel.sh 7.1.3 silent
+EOF
+    exit 0
+fi
+
 KERNEL_VER="${1:-7.1.3}"
 PATCH_MODE="${2:-verbose}"
 MAJOR_VER="v$(echo "${KERNEL_VER}" | cut -d. -f1).x"

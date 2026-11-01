@@ -19,6 +19,32 @@
 # ==============================================================================
 set -euo pipefail
 
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    cat <<'EOF'
+Usage: ./fix-nouveau-4k-wayland.sh [--write-config] [-h|--help]
+
+Works around the Nouveau SST FIFO watermark limit (WARN_ON(waterMark > 39) in
+nv50_sor_dp_watermark_sst_calc) when driving two external 32" 4K monitors
+(DP-2 and DP-3 at 3840x2160@30Hz) alongside the internal 2560x1440@60Hz LVDS
+panel on a Lenovo ThinkPad T430 + 4338 Dock (10240x2160 total desktop).
+
+Options:
+  --write-config   Write a calibrated ~/.config/monitors.xml profile for GNOME
+                   Mutter (backs up any existing file) and exit.
+  -h, --help       Show this help message and exit.
+
+Environment Variables:
+  LVDS_OUT         Internal panel connector name (default: LVDS-1)
+  DP_LEFT          Left 4K DisplayPort connector (default: DP-2)
+  DP_RIGHT         Right 4K DisplayPort connector (default: DP-3)
+
+Examples:
+  ./fix-nouveau-4k-wayland.sh
+  ./fix-nouveau-4k-wayland.sh --write-config
+EOF
+    exit 0
+fi
+
 LVDS_OUT="${LVDS_OUT:-LVDS-1}"
 DP_LEFT="${DP_LEFT:-DP-2}"
 DP_RIGHT="${DP_RIGHT:-DP-3}"

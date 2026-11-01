@@ -8,6 +8,24 @@
 # ==============================================================================
 set -euo pipefail
 
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    cat <<'EOF'
+Usage: ./wake-nouveau-dp.sh [-h|--help]
+
+Wakes the discrete NVIDIA NVS 5400M (GF108M) GPU from PCI runtime suspend
+and re-enables external DisplayPort monitors (DP-2 & DP-3) when multi-input
+monitors (e.g. Iiyama ProLite XB3288UHSU) do not emit a hotplug pulse on
+input switchback.
+
+Environment Variables:
+  NOUVEAU_PCI_DEV  PCI address of the discrete NVIDIA GPU (default: 0000:01:00.0)
+
+Example:
+  ./wake-nouveau-dp.sh
+EOF
+    exit 0
+fi
+
 PCI_DEV="${NOUVEAU_PCI_DEV:-0000:01:00.0}"
 POWER_CTRL="/sys/bus/pci/devices/${PCI_DEV}/power/control"
 RUNTIME_STATUS="/sys/bus/pci/devices/${PCI_DEV}/power/runtime_status"

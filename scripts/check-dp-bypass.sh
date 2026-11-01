@@ -6,6 +6,23 @@
 # ==============================================================================
 set -euo pipefail
 
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    cat <<'EOF'
+Usage: ./check-dp-bypass.sh [-h|--help]
+
+Inspects the running kernel version, NVIDIA GPU PCI runtime PM state, and
+counts prevented DisplayPort zero-lane division-by-zero crashes in dmesg
+and /var/log/kern.log (when running the verbose nvkm_warn patch variant).
+
+Environment Variables:
+  NOUVEAU_PCI_DEV  PCI address of the discrete NVIDIA GPU (default: 0000:01:00.0)
+
+Example:
+  ./check-dp-bypass.sh
+EOF
+    exit 0
+fi
+
 PCI_DEV="${NOUVEAU_PCI_DEV:-0000:01:00.0}"
 RUNTIME_STATUS="/sys/bus/pci/devices/${PCI_DEV}/power/runtime_status"
 
