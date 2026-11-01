@@ -42,7 +42,7 @@ When the ThinkPad T430 and Type 4338 Dock came out in 2012, Lenovo's datasheet l
 In practice:
 - At **`30Hz`** (`262.75 MHz` pixel clock per monitor over 4-lane HBR DisplayPort 1.1a), **`2× 3840×2160 @ 30Hz` + `2560×1440 @ 60Hz` (`10240 × 2160` total desktop)** is the physical ceiling of what the NVS 5400M display engine and 4338 Dock can handle.
 - For coding, terminal work, and daily office use, `30Hz` works fine on both 4K panels.
-- **Why this matters for the kernel:** Even when a system is running at its maximum display bandwidth through a dock, **the Linux kernel should never crash with a division-by-zero oops just because a monitor goes into power-save standby or switches inputs.** Skipping the DisplayPort symbol calculation when `ior->dp.nr == 0` keeps the system stable across every monitor sleep and input-switch event.
+- **Why this matters for the kernel:** Switching the monitors to a second laptop on HDMI, letting them fall asleep into power-save, and switching back to the T430 creates a corner case where the laptop is not properly informed/polled of the link state (`DRM: DDC responded, but no EDID`) and assumes the monitor is active while `ior->dp.nr == 0`. Whether that state mismatch comes from the monitor firmware or the driver's polling logic, **the Linux kernel must never crash with a division-by-zero oops on it.** Skipping the DisplayPort calculation when `ior->dp.nr == 0` keeps the system stable across every input-switch and monitor power-save cycle.
 
 ---
 

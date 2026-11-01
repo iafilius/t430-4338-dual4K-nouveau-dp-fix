@@ -25,7 +25,7 @@ Dropping the proprietary driver was an easy decision once the open-source **`nou
 
 **Does it work? Yes, out of the box—but it is only reliable with a small one-liner kernel patch (`if (ior->dp.nr == 0) return;`).**
 
-Without that check, whenever the external 4K monitors go into power-saving standby or switch inputs to my work laptop, the DisplayPort lane count drops to `0` (`ior->dp.nr == 0`). When a subsequent modeset interrupt calls `nv50_disp_super_2_2_dp()`, `nouveau` divides by `ior->dp.nr` (`0`), causing a **kernel division-by-zero oops** in the `nvkm-disp` workqueue. The desktop freezes, system load climbs above `1.0`, `reboot` hangs, and the laptop needs a hard power reset.
+Without that check, switching the two 4K monitors over to my second laptop (on HDMI), letting the monitors go into power-saving standby when that laptop falls asleep, and then switching them back (or waking them up) triggers a **kernel division-by-zero oops** on the T430. During that transition (`DRM: DDC responded, but no EDID for DP-2 / DP-3`), the T430 is not properly informed or polled about the actual DisplayPort link state: `nouveau` assumes the monitor output is active and runs `nv50_disp_super_2_2_dp()` while the active DisplayPort lane count is still `0` (`ior->dp.nr == 0`). Even though this is a corner case—and whether the underlying state quirk is in the monitor firmware, the dock, or kernel polling—**the Linux kernel must never crash on it.** Without the patch, the desktop freezes, system load climbs above `1.0`, `reboot` hangs, and the laptop needs a hard power reset.
 
 I first tracked down and patched this bug in **July 2024** ([GitLab Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377)). After hitting the exact same freeze again on a clean mainline **`7.1.3`** kernel in **July 2026**, I put together this repository so I don't have to dig up my notes every time—and so kernel maintainers and other ThinkPad / `nouveau` users have everything in one place.
 
@@ -57,10 +57,10 @@ I first tracked down and patched this bug in **July 2024** ([GitLab Issue #377](
 ![The End-of-Workday Crash State Machine](assets/crash-state-machine.svg)
 
 ### How the Crash Happens
-1. Both 32" Iiyama 4K monitors are switched to their **HDMI** inputs (displaying the MacBook Pro) while the T430 stays docked on **DisplayPort** (`DP-2` and `DP-3`).
-2. At the end of the workday, the MacBook Pro goes to sleep. With no active signal on HDMI, both monitors enter **power-saving standby**.
-3. When the T430 processes a modeset or hot-plug interrupt while the DisplayPort links are inactive, the active lane count is zero (`ior->dp.nr == 0`).
-4. Inside `drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c`, `nv50_disp_super_2_2_dp()` divides directly by `ior->dp.nr` in three places without checking for zero:
+1. **Switch inputs to the 2nd laptop:** Both 32" Iiyama 4K monitors are switched to their **HDMI** inputs (displaying the MacBook Pro) while the T430 stays docked on **DisplayPort** (`DP-2` and `DP-3`).
+2. **Monitors enter power-saving standby:** At the end of the workday, the MacBook Pro goes to sleep. With no active signal on HDMI, both monitors enter **power-saving standby**, and the DisplayPort lane count drops to `0` (`ior->dp.nr == 0`).
+3. **Switch back / wake up with stale link state:** When the monitors wake up or are switched back to the T430, the T430 is not properly informed or polled for the actual link situation (`DRM: DDC responded, but no EDID for DP-2 / DP-3`). The display engine assumes the monitor is still/again there and triggers the `nv50_disp_super` modeset supervisor before DisplayPort link training has established active lanes (`ior->dp.nr == 0`).
+4. **Unchecked division by zero in `nv50.c`:** Whether this desynchronized state is a quirk in the monitor firmware or in `nouveau`'s hot-plug/polling logic, the kernel must not crash on it. Inside `drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c`, `nv50_disp_super_2_2_dp()` divides directly by `ior->dp.nr` in three places without checking for zero:
 
 ```c
 // drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.c (lines 1179–1190)
