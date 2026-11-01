@@ -18,9 +18,11 @@ However, logging in via **SSH from a second computer** (`ssh arjan@192.168.1.57`
 To capture full DRM and Nouveau trace logs over SSH leading up to the freeze, I configured `/etc/default/grub` with extra debug flags:
 
 ```bash
-GRUB_CMDLINE_LINUX_DEFAULT="loglevel=6 nouveau.debug=info drm.debug=2"
-# And for deeper DRM / DP AUX tracing:
+GRUB_CMDLINE_LINUX_DEFAULT="loglevel=6 nouveau.debug=info drm.debug=2 log_buf_len=16M"
+# For deeper DRM atomic / DP AUX tracing:
 # drm.debug=14 log_buf_len=16M
+# Optional if testing screen wake-up / IOMMU interactions:
+# intel_iommu=off iommu=pt
 ```
 
 Whenever the external Iiyama 4K DisplayPort monitors went into standby, `dmesg` logged a division error (`divide error: 0000 [#1] PREEMPT SMP PTI` / `Oops: divide error`):
@@ -31,9 +33,50 @@ Whenever the external Iiyama 4K DisplayPort monitors went into standby, `dmesg` 
 
 ---
 
-## 2. Finding the Exact C Source Line (`vmlinux` vs. `nv50.o`)
+## 2. Compiling the Kernel with Debug Symbols & Decoding Backtraces
 
-### First Attempt: `gdb vmlinux` (Why It Failed)
+If you want `gdb`, `objdump`, or `faddr2line` to map a crash address like `nv50_disp_super_2_2_dp+0xa7/0x320` to the exact C source file and line number, the kernel (and its modules) must be compiled with **DWARF debug symbols (`CONFIG_DEBUG_INFO=y`)**.
+
+### Step 2.1: Configuring `.config` for Kernel & Module Debugging
+Inside the extracted kernel source tree (e.g. `~/kernel/linux-7.1.3`), start from your running Ubuntu/Debian config, strip the distro signing keys (which otherwise break local builds), and enable `DEBUG_KERNEL` + `DEBUG_INFO`:
+
+```bash
+# 1. Reuse the running kernel's configuration as baseline
+cp /boot/config-$(uname -r) .config
+
+# 2. Clear canonical/distro signing keys so local .deb packaging succeeds
+./scripts/config --file .config --disable MODULE_SIG
+./scripts/config --file .config --set-str SYSTEM_TRUSTED_KEYS ""
+./scripts/config --file .config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
+
+# 3. Enable debug symbols (DWARF) for vmlinux and all .ko / .o module objects
+./scripts/config --file .config -d COMPILE_TEST -e DEBUG_KERNEL -e DEBUG_INFO
+
+# Optional: increase compiled-in Nouveau debug limits
+# ./scripts/config --file .config --set-val CONFIG_NOUVEAU_DEBUG 5
+# ./scripts/config --file .config --set-val CONFIG_NOUVEAU_DEBUG_DEFAULT 3
+
+yes "" | make oldconfig
+```
+
+### Step 2.2: Building `.deb` Packages (Including the `-dbg` Symbols Package)
+```bash
+# Build binary .deb packages across all CPU cores
+# (Use bindeb-pkg when building from a kernel.org tarball, or deb-pkg in a git clone)
+make -j $(getconf _NPROCESSORS_ONLN) bindeb-pkg LOCALVERSION=-custom
+
+# Tip: if a parallel build fails and the compiler error is buried in parallel output,
+# re-run single-threaded to see the exact failure:
+# make -j 1 bindeb-pkg LOCALVERSION=-custom
+```
+
+When `CONFIG_DEBUG_INFO` is enabled, the build produces **four** `.deb` packages in the parent directory (`..`):
+1. `linux-image-<ver>-custom_*.deb` — the bootable kernel and modules (`/lib/modules/<ver>-custom/`).
+2. `linux-headers-<ver>-custom_*.deb` — headers for building external modules (`dkms`, `kgdboe`, etc.).
+3. `linux-image-<ver>-custom-dbg_*.deb` (~1.5 GB) — **unstripped debug symbols** installed under `/usr/lib/debug/lib/modules/<ver>-custom/` and `/usr/lib/debug/vmlinux-<ver>-custom`.
+4. `linux-libc-dev_*.deb` — userspace C library headers.
+
+### Step 2.3: Pitfall — Why `gdb vmlinux` Cannot Find `[nouveau]` Symbols
 My first attempt was loading the uncompressed debug kernel image (`vmlinux`) into GDB:
 
 ```text
@@ -43,18 +86,20 @@ Reading symbols from /usr/lib/debug/vmlinux-6.9.9-custom...
 No symbol "nv50_disp_super_2_2" in current context.
 ```
 
-Because `CONFIG_DRM_NOUVEAU=m` builds `nouveau` as a loadable kernel module (`nouveau.ko`) rather than compiling it into `vmlinux`, none of the `nv50_disp_*` symbols are in `vmlinux`.
+**Why this fails:** When `dmesg` shows `[nouveau]` at the end of `RIP: 0010:nv50_disp_super_2_2_dp+0xa7/0x320 [nouveau]`, that function lives in the loadable kernel module (`CONFIG_DRM_NOUVEAU=m` → `nouveau.ko`), **not** in the core `vmlinux` binary.
+*(Note: If GDB also complains that `scripts/gdb/vmlinux-gdb.py` auto-loading was declined, add `add-auto-load-safe-path /home/arjan/kernel/linux/scripts/gdb/vmlinux-gdb.py` to `~/.config/gdb/gdbinit`).*
 
-### What Worked: Running `objdump` and `gdb` on `nv50.o`
-Instead of `vmlinux`, I ran `objdump` and `gdb` directly against the compiled module object file (`drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.o`) in the kernel build tree:
+### Step 2.4: Three Ways to Map `func+0xoffset` to the Exact C Source Line
+
+#### Method A: `gdb` Directly on the Module Object (`nv50.o` or `nouveau.ko`)
+Point `gdb` at the compiled object file (`drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.o`) in your build tree (or the unstripped `nouveau.ko` from the `-dbg` package):
 
 ```bash
 cd ~/kernel/linux-6.9.9/drivers/gpu/drm/nouveau/nvkm/engine/disp
-objdump -SdCg nv50.o | less
 gdb nv50.o
 ```
 
-Running `list *(nv50_disp_super_2_2+0x284)` inside `gdb nv50.o` mapped the instruction offset straight to the C source lines inside `nv50_disp_super_2_2_dp()`:
+Inside `gdb`, pass the exact `function+0xoffset` from the `RIP:` line in `dmesg` to `list *()`:
 
 ```text
 (gdb) list *(nv50_disp_super_2_2+0x284)
@@ -68,10 +113,27 @@ Running `list *(nv50_disp_super_2_2+0x284)` inside `gdb nv50.o` mapped the instr
 1095                      active_syms_frac << 16 | active_syms_int);
 1096
 1097            link_data_rate = (khz * head->asy.or.depth / 8) / ior->dp.nr;
-1098
+```
+*(Or on non-inlined builds: `(gdb) list *(nv50_disp_super_2_2_dp+0xa7)`).*
+
+#### Method B: `objdump` Interleaved Source + Assembly Disassembly
+To inspect the generated x86_64 `div` instructions interleaved with C source lines and line numbers:
+
+```bash
+cd ~/kernel/linux-6.9.9/drivers/gpu/drm/nouveau/nvkm/engine/disp
+objdump -SdCg nv50.o | less
+# Or with relocations and explicit line numbers (per kernel.org bug-hunting guide):
+objdump -r -S -l --disassemble nv50.o | less
 ```
 
-Looking at that function showed three divisions by `ior->dp.nr` (`12 / ior->dp.nr`, `36 / ior->dp.nr`, and `(khz * head->asy.or.depth / 8) / ior->dp.nr`) with no check that `ior->dp.nr` is non-zero.
+#### Method C: Using the Kernel's `scripts/faddr2line` Utility
+From the root of the kernel build tree, you can also run `scripts/faddr2line` against `nouveau.o` / `nouveau.ko` or `nv50.o`:
+
+```bash
+./scripts/faddr2line drivers/gpu/drm/nouveau/nvkm/engine/disp/nv50.o nv50_disp_super_2_2_dp+0xa7
+```
+
+Looking at `nv50_disp_super_2_2_dp()` in `nv50.c` immediately showed three divisions by `ior->dp.nr` (`12 / ior->dp.nr`, `36 / ior->dp.nr`, and `(khz * head->asy.or.depth / 8) / ior->dp.nr`) with no check that `ior->dp.nr` is non-zero.
 
 ---
 

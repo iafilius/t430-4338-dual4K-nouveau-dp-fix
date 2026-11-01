@@ -54,10 +54,11 @@ if [[ ! -f .config ]]; then
     cp "/boot/config-$(uname -r)" .config
 fi
 
-echo "[*] Disabling module signing certificate dependencies for local Debian package build..."
+echo "[*] Disabling module signing certificate dependencies and enabling debug symbols..."
 ./scripts/config --file .config --disable MODULE_SIG
 ./scripts/config --file .config --set-str SYSTEM_TRUSTED_KEYS ""
 ./scripts/config --file .config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ""
+./scripts/config --file .config -d COMPILE_TEST -e DEBUG_KERNEL -e DEBUG_INFO
 yes "" | make oldconfig >/dev/null
 
 THREADS="$(getconf _NPROCESSORS_ONLN)"

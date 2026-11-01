@@ -35,7 +35,7 @@ I first tracked down and patched this bug in **July 2024** ([GitLab Issue #377](
 | :--- | :--- |
 | **A Linux Kernel / Nouveau Maintainer** | [Section 2: Root Cause & Backtrace](#2-root-cause-the-end-of-workday-division-by-zero-bug) • [Section 3: The Patch & `b4 am`](#3-the-kernel-patch-nv50c--tested-kernels) • [`docs/KERNEL_TEST_MATRIX.md`](docs/KERNEL_TEST_MATRIX.md) |
 | **A ThinkPad T430 / 4338 Dock / Legacy NVIDIA User** | [`docs/HARDWARE_AND_DRIVER_HISTORY.md`](docs/HARDWARE_AND_DRIVER_HISTORY.md) • [Section 4: Building & Scripts](#4-building-the-kernel-helper-scripts--deep-dive-docs) • [`docs/WAYLAND_DUAL_4K_WATERMARK.md`](docs/WAYLAND_DUAL_4K_WATERMARK.md) |
-| **Interested in the Kernel Debugging Backstory** | [`docs/KERNEL_DEBUGGING_JOURNEY.md`](docs/KERNEL_DEBUGGING_JOURNEY.md) (`gdb nv50.o`, `objdump`, and why remote debugging via `kgdboe` failed) |
+| **Interested in the Kernel Debugging Backstory** | [`docs/KERNEL_DEBUGGING_JOURNEY.md`](docs/KERNEL_DEBUGGING_JOURNEY.md) (compiling with `DEBUG_INFO`, decoding backtraces with `gdb nv50.o` / `objdump` / `faddr2line`, and why `kgdboe` failed) |
 
 ---
 
