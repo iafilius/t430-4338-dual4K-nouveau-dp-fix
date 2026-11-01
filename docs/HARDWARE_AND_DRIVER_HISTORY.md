@@ -68,3 +68,29 @@ Because keeping `nvidia-driver-390` alive was so much trouble, dropping it as so
 
 When I tested the in-tree **`nouveau`** driver again in **2024**, the situation had changed completely. Because `nouveau` uses standard Linux DRM/KMS, **GBM**, and **DMA-BUF**, it worked out of the box with **Wayland** across the internal `i915` WQHD screen and both external `nouveau` 4K@30Hz DisplayPort monitors. The only remaining problem was the `nv50_disp_super_2_2_dp()` division-by-zero crash whenever the monitors went into standby—which the one-liner patch in this repository fixes.
 
+---
+
+## 5. Related NVIDIA/Nouveau DisplayPort Black-Screen & Wake-Up Reports
+
+When `nv50_disp_super_2_2_dp()` crashes with a divide-by-zero oops inside the `nvkm-disp` kernel workqueue, the display engine locks up immediately (`DRM: core notifier timeout` / `base-0: timeout`) while the screens are black or frozen. Unless you have a second computer on your desk to **SSH** into the locked machine and run `dmesg`, all you see as a user is a **"magic black screen" or hard freeze** after monitor sleep, wake-up, or input switching—followed by a forced power-button reset that wipes volatile logs.
+
+Because `nv50_disp_super_2_2_dp()` is shared across a wide range of NVIDIA GPUs in `nouveau`, this unguarded `ior->dp.nr == 0` division (or closely related DisplayPort link-training state mismatches during DPMS/input-switching) is potentially relevant to many other DisplayPort black-screen reports across upstream bug trackers and Linux forums:
+
+| # | Bug Tracker / Forum | Issue / Thread | Reported Symptom & Overlap |
+| :--- | :--- | :--- | :--- |
+| **1** | **FreeDesktop GitLab (`drm/nouveau`)** | [Issue #377](https://gitlab.freedesktop.org/drm/nouveau/-/issues/377) | **[This Bug]** `[GF108M]` (`NVS 5400M` on T430 + 4338 Dock): kernel divide-by-zero crash in `nv50_disp_super_2_2_dp` when DisplayPort screens wake from sleep or input switch (`ior->dp.nr == 0`). |
+| **2** | **FreeDesktop GitLab (`drm/nouveau`)** | [Issue #472](https://gitlab.freedesktop.org/drm/nouveau/-/issues/472) | *"RTX 3080 stuck with black screen when my monitor switches inputs"* — exact same user trigger (switching a shared monitor's input away from DisplayPort and back). |
+| **3** | **FreeDesktop GitLab (`drm/nouveau`)** | [Issue #430](https://gitlab.freedesktop.org/drm/nouveau/-/issues/430) | *"Suspend/resume black screen, DPMS screen saver black screen"* — DisplayPort output failing to recover after DPMS screen power-save standby. |
+| **4** | **FreeDesktop GitLab (`drm/nouveau`)** | [Issue #496](https://gitlab.freedesktop.org/drm/nouveau/-/issues/496) | *"Screen does not show on DisplayPort of NVIDIA Quadro 600 with nouveau"* — same Fermi `GF108` GPU family on DisplayPort. |
+| **5** | **FreeDesktop GitLab (`drm/nouveau`)** | [Issue #494](https://gitlab.freedesktop.org/drm/nouveau/-/issues/494) | *"Black screen / no backlight on resume from suspend (Optimus Intel + Quadro K1100M on nouveau)"* — hybrid Optimus workstation resume black screen. |
+| **6** | **FreeDesktop GitLab (`drm/nouveau`)** | [Issue #483](https://gitlab.freedesktop.org/drm/nouveau/-/issues/483) | *"DisplayPort AUX channel corruption and monitor freezes on RTX 4090 with GSP firmware"* — DisplayPort AUX/link state desynchronization freezing monitors. |
+| **7** | **FreeDesktop GitLab (`drm/nouveau`)** | [Issue #425](https://gitlab.freedesktop.org/drm/nouveau/-/issues/425) | *"Ensure that nouveau does not crash upon simultaneously disconnecting 2 external DisplayPort displays"* — dual-DisplayPort teardown crash. |
+| **8** | **FreeDesktop GitLab (`drm/nouveau`)** | [Issue #412](https://gitlab.freedesktop.org/drm/nouveau/-/issues/412) | *"Dock video outputs do not appear when dock is plugged in, but do after xrandr is run"* — docked DisplayPort hot-plug / polling state mismatch. |
+| **9** | **FreeDesktop GitLab (`drm/nouveau`)** | [Issue #399](https://gitlab.freedesktop.org/drm/nouveau/-/issues/399) | *"Kernel stack trace from nouveau while probing DP outputs"* — kernel trace triggered during DisplayPort AUX/DDC probing. |
+| **10** | **FreeDesktop GitLab (`drm/nouveau`)** | [Issue #276](https://gitlab.freedesktop.org/drm/nouveau/-/issues/276) | *"nouveau 0000:01:00.0: DRM: wndw-0: timeout"* — `nv50_disp` display channel timeout locking the display pipeline. |
+| **11** | **FreeDesktop GitLab (`drm/nouveau`)** | [Issue #175](https://gitlab.freedesktop.org/drm/nouveau/-/issues/175) | *"Trace and black screen with DisplayPort 1.4, okay with DP 1.2"* — `nv50_disp` trace + black screen during DisplayPort link negotiation. |
+| **12** | **FreeDesktop GitLab (`drm/nouveau`)** | [Issue #159](https://gitlab.freedesktop.org/drm/nouveau/-/issues/159) | *"Unable to set a 4K 60Hz mode for external DP screen"* — 4K DisplayPort link bandwidth and mode-validation limits on `nouveau`. |
+| **13** | **Red Hat Bugzilla** | [Bug #1509294](https://bugzilla.redhat.com/show_bug.cgi?id=1509294) | `nv50_disp_super` / `nvkm-disp` workqueue crash and display lockup during docked external monitor state transitions. |
+| **14** | **openSUSE Forums** | [Thread #167249](https://forums.opensuse.org/t/black-screen-with-kernel-6-3-9-update-of-nouveau/167249) | *"Black screen with kernel update of nouveau"* — `nv50_disp` modeset crash leaving the monitor on a permanent black screen. |
+| **15** | **NVIDIA Developer Forums** | [Thread #304794](https://forums.developer.nvidia.com/t/no-video-on-displayport-after-computer-sleep-hdmi-works/304794) | *"No video on DisplayPort after computer sleep (HDMI works)"* — classic DisplayPort-only sleep/wake handshake failure. |
+
